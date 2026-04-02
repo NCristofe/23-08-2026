@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nosso Amor 💖</title>
 
-  <!-- Fonte bonita -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&family=Great+Vibes&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -16,8 +13,8 @@
 
   <!-- HEADER -->
   <header>
-    <h1>Nosso Amor</h1>
-    <p>cada segundo com você é único 💖</p>
+    <h1>Nosso Amor 💖</h1>
+    <p id="usuarioLogado"></p>
   </header>
 
   <!-- CONTADOR -->
@@ -25,30 +22,21 @@
     <div id="contador"></div>
   </section>
 
-  <!-- MURAL -->
-  <section class="card">
-    <h2>Memórias ✨</h2>
-
-    <textarea id="textoMemoria" placeholder="Escreva um momento especial..."></textarea>
-    <input type="file" id="imagemMemoria" accept="image/*">
-    <button id="salvarMemoria">Salvar</button>
-
-    <div id="feedMemorias"></div>
-  </section>
-
-  <!-- MENSAGENS -->
+  <!-- CHAT -->
   <section class="card">
     <h2>Mensagens 💌</h2>
 
-    <textarea id="novaMensagem" placeholder="Escreva algo especial..."></textarea>
-    <button id="enviarMensagem">Enviar</button>
+    <div id="chat"></div>
 
-    <div id="listaMensagens"></div>
+    <div class="input-area">
+      <input type="text" id="mensagemInput" placeholder="Digite algo especial...">
+      <button onclick="enviarMensagem()">Enviar</button>
+    </div>
   </section>
 
+  <button id="logout">Sair</button>
+
 </div>
-
-
 
 <script src="js/scripts.js"></script>
 </body>

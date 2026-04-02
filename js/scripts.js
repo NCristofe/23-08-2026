@@ -1,4 +1,19 @@
-// ===== CONTADOR =====
+// 🔐 LOGIN
+const usuario = localStorage.getItem("usuario");
+
+if (!usuario) {
+  window.location.href = "login.html";
+}
+
+document.getElementById("usuarioLogado").innerText = "💖 " + usuario;
+
+// LOGOUT
+document.getElementById("logout").onclick = () => {
+  localStorage.removeItem("usuario");
+  window.location.href = "login.html";
+};
+
+// ⏱ CONTADOR COMPLETO
 const contador = document.getElementById("contador");
 const dataInicio = new Date("2025-08-23T23:10:00");
 
@@ -30,7 +45,7 @@ function atualizarContador() {
 
   contador.innerHTML = `
     <div>${anos} anos • ${meses} meses</div>
-    <div class="tempo-grande">${dias} dias</div>
+    <div style="font-size:2rem; font-weight:bold">${dias} dias</div>
     <div>${horas}h ${minutos}m ${segundos}s</div>
   `;
 }
@@ -39,111 +54,44 @@ setInterval(atualizarContador, 1000);
 atualizarContador();
 
 
-// ===== TOGGLE MENSAGENS (ABRIR/FECHAR) =====
-const btnToggle = document.getElementById("toggleMensagens");
-const painel = document.getElementById("painelMensagens");
+// 💬 CHAT
+const chat = document.getElementById("chat");
 
-btnToggle.onclick = () => {
-  painel.classList.toggle("hidden");
-};
-
-
-// ===== MENSAGENS PRIVADAS =====
-const listaMensagens = document.getElementById("listaMensagens");
-
-document.getElementById("enviarMensagem").onclick = () => {
-  const texto = document.getElementById("novaMensagem").value.trim();
+function enviarMensagem() {
+  const input = document.getElementById("mensagemInput");
+  const texto = input.value.trim();
   if (!texto) return;
 
   const msg = {
     texto,
+    usuario,
     data: new Date().toLocaleString()
   };
 
-  salvarMensagem(msg);
-  renderMensagem(msg);
-
-  document.getElementById("novaMensagem").value = "";
-};
-
-function salvarMensagem(msg) {
-  let msgs = JSON.parse(localStorage.getItem("mensagens")) || [];
+  let msgs = JSON.parse(localStorage.getItem("chat")) || [];
   msgs.push(msg);
-  localStorage.setItem("mensagens", JSON.stringify(msgs));
+  localStorage.setItem("chat", JSON.stringify(msgs));
+
+  render(msg);
+  input.value = "";
 }
 
-function renderMensagem(msg) {
+function render(msg) {
   const div = document.createElement("div");
-  div.className = "msg";
+  div.className = "msg " + (msg.usuario === usuario ? "eu" : "outro");
 
   div.innerHTML = `
     <p>${msg.texto}</p>
-    <small>${msg.data}</small>
+    <small>${msg.usuario} • ${msg.data}</small>
   `;
 
-  listaMensagens.prepend(div);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
 }
 
 function carregarMensagens() {
-  let msgs = JSON.parse(localStorage.getItem("mensagens")) || [];
-  msgs.reverse().forEach(renderMensagem);
+  let msgs = JSON.parse(localStorage.getItem("chat")) || [];
+  msgs.forEach(render);
 }
 
-
-// ===== MURAL (SEPARADO) =====
-const feed = document.getElementById("feedMemorias");
-
-document.getElementById("salvarMemoria").onclick = () => {
-  const texto = document.getElementById("textoMemoria").value.trim();
-  const file = document.getElementById("imagemMemoria").files[0];
-
-  if (!texto && !file) return;
-
-  const reader = new FileReader();
-
-  reader.onload = function () {
-    const memoria = {
-      texto,
-      imagem: file ? reader.result : null,
-      data: new Date().toLocaleString()
-    };
-
-    salvarMemoria(memoria);
-    renderMemoria(memoria);
-  };
-
-  if (file) reader.readAsDataURL(file);
-  else reader.onload();
-
-  document.getElementById("textoMemoria").value = "";
-  document.getElementById("imagemMemoria").value = "";
-};
-
-function salvarMemoria(memoria) {
-  let mems = JSON.parse(localStorage.getItem("memorias")) || [];
-  mems.push(memoria);
-  localStorage.setItem("memorias", JSON.stringify(mems));
-}
-
-function renderMemoria(memoria) {
-  const div = document.createElement("div");
-  div.className = "memoria";
-
-  div.innerHTML = `
-    <p>${memoria.texto}</p>
-    ${memoria.imagem ? `<img src="${memoria.imagem}">` : ""}
-    <div class="data">${memoria.data}</div>
-  `;
-
-  feed.prepend(div);
-}
-
-function carregarMemorias() {
-  let mems = JSON.parse(localStorage.getItem("memorias")) || [];
-  mems.reverse().forEach(renderMemoria);
-}
-
-
-// ===== INIT =====
-carregarMensagens();
-carregarMemorias();
+carregarMensagens();  

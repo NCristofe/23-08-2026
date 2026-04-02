@@ -1,0 +1,118 @@
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #f8cdda, #fcb69f);
+  font-family: 'Arial', sans-serif;
+}
+
+/* CONTAINER */
+.container {
+  position: relative;
+}
+
+/* ENVELOPE (FUNDO MAIOR) */
+.envelope {
+  width: 320px;
+  height: 200px;
+  background: linear-gradient(135deg, #ff6b81, #ff8fa3);
+  border-radius: 15px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+}
+
+/* CARTA */
+.card {
+justify-content: center;
+  
+  width: 260px;
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  text-align: center;
+  top: 30px;
+  left: 30px;
+  transition: 0.4s ease;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  cursor: pointer;
+}
+
+/* HOVER BONITO (desktop) */
+.card:hover {
+  transform: translateY(-10px);
+}
+
+/* TÍTULO */
+h2 {
+  margin: 0;
+  color: #ff4d6d;
+  font-size: 1.6rem;
+}
+
+/* TEXTO */
+p {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+/* INPUT */
+input {
+  width: 90%;
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #eee;
+}
+
+/* BOTÕES */
+button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: #ff4d6d;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+button:hover {
+  background: #ff3355;
+  transform: scale(1.03);
+}
+
+
+button:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #c73650;
+}
+
+button.clicked {
+  transform: scale(0.95);
+  background: #e63e5c;
+}
+button.selected {
+  background: #ff3355;
+  transform: scale(0.97);
+  box-shadow: 0 0 0 3px rgba(255, 77, 109, 0.3);
+}
+
+/* ERRO */
+#erro {
+  color: red;
+  font-size: 12px;
+}
+
+/* ESCONDIDO */
+.hidden {
+  display: none;
+}
+
+.btn-user.selected {
+  background: #ff3355;
+  transform: scale(0.97);
+  box-shadow: 0 0 0 3px rgba(255, 77, 109, 0.3);
+}
