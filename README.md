@@ -7,7 +7,7 @@
 <p align="center">
   <i>Feito com React + amor + animações suaves + experiência PWA.</i>
 </p>
-
+ 
 ---
 
 ## ✨ Sobre o projeto
