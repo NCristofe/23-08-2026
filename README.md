@@ -323,8 +323,7 @@ Mais do que código, ele representa:
 
 <p align="center">
   <b>Natanael Cristofe</b>
-</p>
-
+</p> 
 <p align="center">
   Desenvolvido com ❤️ usando React + Firebase + PWA
 </p>
