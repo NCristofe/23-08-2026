@@ -11,7 +11,7 @@
 <p align="center">
   Desenvolvido com React, TypeScript, animações fluidas e tecnologia PWA.
 </p>
-
+ 
 <p align="center">
   <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB"/>
   <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white"/>
