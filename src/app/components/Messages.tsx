@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { Send, Heart } from "lucide-react";
 import { db } from "..//../Firebase";
@@ -25,11 +26,16 @@ const quickMessages = [
 ];
 
 export default function Messages() {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const currentUser = localStorage.getItem("currentUser") ?? "Geovanna";
+  const currentUser = localStorage.getItem("currentUser");
+
+  useEffect(() => {
+    if (!currentUser) navigate("/");
+  }, [currentUser, navigate]);
 
   useEffect(() => {
     const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
@@ -63,7 +69,7 @@ export default function Messages() {
 
       await addDoc(collection(db, "messages"), {
         text: newMessage,
-        sender: currentUser,
+        sender: currentUser ?? "Anônimo",
         time,
         createdAt: new Date(),
       });
@@ -81,7 +87,7 @@ export default function Messages() {
 
       await addDoc(collection(db, "messages"), {
         text,
-        sender: currentUser,
+        sender: currentUser ?? "Anônimo",
         time,
         createdAt: new Date(),
       });
@@ -115,7 +121,7 @@ export default function Messages() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <AnimatePresence>
           {messages.map((message, index) => {
-            const isMe = message.sender === currentUser;
+            const isMe = currentUser !== null && message.sender === currentUser;
 
             return (
               <motion.div
