@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getAuth, signInAnonymously } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -12,9 +12,16 @@ const firebaseConfig = {
   appId: "1:591144523973:web:aab33eaf7a3ab81a7ef8ac",
 };
 
-const app = initializeApp(firebaseConfig);;
+const app = initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
+
+// Garante que existe um usuário autenticado (anônimo) para o Firebase Storage funcionar
+export async function ensureAuth() {
+  if (!auth.currentUser) {
+    await signInAnonymously(auth);
+  }
+}
 
