@@ -11,9 +11,12 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icons/*.png'],
+      devOptions: {
+        enabled: true,
+      },
       manifest: {
-        name: 'Nome do Seu App',
-        short_name: 'App',
+        name: 'Nosso Amor',
+        short_name: 'Nosso Amor',
         description: 'Nosso app de comunicação',
         theme_color: '#ffffff',
         background_color: '#ffffff',
