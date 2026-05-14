@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Heart, Trash2, Pencil } from "lucide-react";
 
-import { db, auth, storage } from "../../Firebase";
+import { db, storage, ensureAuth } from "../../Firebase";
 
 import {
   collection,
@@ -14,8 +14,6 @@ import {
   orderBy,
   query,
 } from "firebase/firestore";
-
-import { onAuthStateChanged } from "firebase/auth";
 
 import {
   ref,
@@ -32,20 +30,17 @@ type Photo = {
 };
 
 export default function Gallery() {
-  const [user, setUser] = useState<any>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [editingCaption, setEditingCaption] = useState(false);
   const [caption, setCaption] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
-  // 👤 usuário real
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
-    return () => unsub();
-  }, []);
+  const currentUser = localStorage.getItem("currentUser") ?? "Anônimo";
 
   function getUserName() {
-    return user?.displayName || user?.email || "Anônimo";
+    return currentUser;
   }
 
   // 📥 realtime firestore
@@ -66,10 +61,9 @@ export default function Gallery() {
 
   // ☁️ upload firebase storage
   async function uploadImage(file: File) {
+    await ensureAuth();
     const fileRef = ref(storage, `photos/${Date.now()}-${file.name}`);
-
     await uploadBytes(fileRef, file);
-
     return await getDownloadURL(fileRef);
   }
 
@@ -77,6 +71,9 @@ export default function Gallery() {
   async function handleAdd(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    setUploading(true);
+    setUploadError(null);
 
     try {
       const url = await uploadImage(file);
@@ -87,8 +84,13 @@ export default function Gallery() {
         createdAt: new Date().toISOString(),
         createdBy: getUserName(),
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro ao enviar imagem:", err);
+      setUploadError(err?.code === "storage/unauthorized"
+        ? "Permissão negada. Verifique as regras do Firebase Storage."
+        : "Erro ao enviar imagem. Tente novamente.");
+    } finally {
+      setUploading(false);
     }
 
     e.target.value = "";
@@ -107,11 +109,12 @@ export default function Gallery() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const url = await uploadImage(file);
-
-    await updateDoc(doc(db, "photos", selectedPhoto.id), {
-      url,
-    });
+    try {
+      const url = await uploadImage(file);
+      await updateDoc(doc(db, "photos", selectedPhoto.id), { url });
+    } catch (err) {
+      console.error("Erro ao trocar imagem:", err);
+    }
   }
 
   // ✏️ EDIT CAPTION
