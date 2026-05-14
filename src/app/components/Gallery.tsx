@@ -135,15 +135,20 @@ export default function Gallery() {
       </h1>
 
       {/* ADD */}
-      <label className="bg-pink-400 text-white p-3 rounded-xl block text-center mb-6 cursor-pointer">
-        Adicionar Foto ❤️
+      <label className={`text-white p-3 rounded-xl block text-center mb-2 cursor-pointer transition-opacity ${uploading ? "bg-pink-300 opacity-60 pointer-events-none" : "bg-pink-400"}`}>
+        {uploading ? "Enviando... ⏳" : "Adicionar Foto ❤️"}
         <input
           type="file"
           accept="image/*"
           className="hidden"
           onChange={handleAdd}
+          disabled={uploading}
         />
       </label>
+
+      {uploadError && (
+        <p className="text-red-500 text-sm text-center mb-4">{uploadError}</p>
+      )}
 
       {/* GRID */}
       <div className="grid grid-cols-2 gap-4">
