@@ -17,9 +17,9 @@ export default defineConfig({
       manifest: {
         name: 'Nosso Amor',
         short_name: 'Nosso Amor',
-        description: 'Nosso app de comunicação',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
+        description: 'Nosso app de comunicação 💕',
+        theme_color: '#ec4899',
+        background_color: '#fff1f5',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
