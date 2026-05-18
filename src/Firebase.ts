@@ -4,12 +4,12 @@ import { getAuth, signInAnonymously } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCdsUb7yvvPEDmftPgT8QmhFDf63gJJtxg",
-  authDomain: "nosso-amor-230825.firebaseapp.com",
-  projectId: "nosso-amor-230825",
-  storageBucket: "nosso-amor-230825.firebasestorage.app",
-  messagingSenderId: "591144523973",
-  appId: "1:591144523973:web:aab33eaf7a3ab81a7ef8ac",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
@@ -24,4 +24,3 @@ export async function ensureAuth() {
     await signInAnonymously(auth);
   }
 }
-
