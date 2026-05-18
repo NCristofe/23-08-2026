@@ -20,7 +20,11 @@ export const storage = getStorage(app);
 
 // Garante que existe um usuário autenticado (anônimo) para o Firebase Storage funcionar
 export async function ensureAuth() {
-  if (!auth.currentUser) {
-    await signInAnonymously(auth);
+  try {
+    if (!auth.currentUser) {
+      await signInAnonymously(auth);
+    }
+  } catch (error) {
+    throw error;
   }
 }

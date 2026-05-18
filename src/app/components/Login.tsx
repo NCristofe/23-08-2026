@@ -40,6 +40,7 @@ export default function Login() {
           saveAuthentication();
           navigate("/app", { replace: true });
         } catch (e) {
+          console.error("Erro detalhado do Firebase:", e);
           setError("Erro ao conectar com o serviço de imagens. Tente novamente.");
         }
       }
