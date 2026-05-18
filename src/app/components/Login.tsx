@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Heart, ArrowRight } from "lucide-react";
+import { Heart, ArrowRight, Lock } from "lucide-react";
 import { motion } from "motion/react";
+import { isAuthenticated, saveAuthentication, validatePassword } from "../auth";
 
 const users = [
   { id: 1, name: "Geovanna", emoji: "👩🏻", color: "bg-pink-100" },
@@ -10,14 +11,31 @@ const users = [
 
 export default function Login() {
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = () => {
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate("/app", { replace: true });
+    }
+  }, [navigate]);
+
+  const handleLogin = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError("");
+
     if (selectedUser) {
       const user = users.find((u) => u.id === selectedUser);
       if (user) {
+        if (!validatePassword(password)) {
+          setError("Senha incorreta. Tente novamente.");
+          return;
+        }
+
         localStorage.setItem("currentUser", user.name);
-        navigate("/app");
+        saveAuthentication();
+        navigate("/app", { replace: true });
       }
     }
   };
@@ -58,7 +76,8 @@ export default function Login() {
         <p className="text-foreground/70">em tempo real</p>
       </motion.div>
 
-      <motion.div
+      <motion.form
+        onSubmit={handleLogin}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.6 }}
@@ -85,14 +104,39 @@ export default function Login() {
           ))}
         </div>
 
+        <label className="block text-foreground/80 mb-3" htmlFor="password">
+          Senha do aplicativo
+        </label>
+        <div className="relative mb-3">
+          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              setError("");
+            }}
+            placeholder="Digite a senha"
+            className="w-full rounded-full bg-white/80 border border-border py-4 pl-12 pr-4 text-foreground shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15"
+            autoComplete="current-password"
+          />
+        </div>
+
+        {error && (
+          <p className="mb-5 text-center text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        )}
+
         <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
-          onClick={handleLogin}
-          disabled={!selectedUser}
+          type="submit"
+          disabled={!selectedUser || !password}
           className={`w-full bg-primary text-primary-foreground rounded-full py-4 px-6 flex items-center justify-center gap-2 transition-all duration-300 ${
-            selectedUser
+            selectedUser && password
               ? "opacity-100 hover:bg-primary/90 hover:scale-105 shadow-lg"
               : "opacity-50 cursor-not-allowed"
           }`}
@@ -100,7 +144,7 @@ export default function Login() {
           <span>Entrar no nosso mundo</span>
           <ArrowRight className="w-5 h-5" />
         </motion.button>
-      </motion.div>
+      </motion.form>
     </div>
   );
 } 
