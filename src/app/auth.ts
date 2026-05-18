@@ -1,5 +1,6 @@
 const AUTH_KEY = "appAuthenticated";
-const PASSWORD = import.meta.env.VITE_APP_PASSWORD || "NossoAmor@2308";
+
+const PASSWORD = import.meta.env.VITE_APP_PASSWORD?.trim() || "NossoAmor@2308";
 
 export function isAuthenticated() {
   return localStorage.getItem(AUTH_KEY) === "true";
