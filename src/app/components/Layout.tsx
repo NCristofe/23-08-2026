@@ -1,10 +1,19 @@
+import { useEffect } from "react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router";
 import { Heart, MessageCircle, Image, Clock, Sparkles, LogOut } from "lucide-react";
 import { clearAuthentication, isAuthenticated } from "../auth";
+import { ensureAuth } from "../../Firebase";
 
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Garante que o Firebase esteja autenticado sempre que o layout carregar
+    if (isAuthenticated()) {
+      ensureAuth().catch(console.error);
+    }
+  }, []);
 
   if (!isAuthenticated()) {
     return <Navigate to="/" replace />;
