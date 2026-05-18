@@ -45,18 +45,24 @@ export default function Gallery() {
 
   // 📥 realtime firestore
   useEffect(() => {
-    const q = query(collection(db, "photos"), orderBy("createdAt", "desc"));
+    let unsub: (() => void) | undefined;
 
-    const unsub = onSnapshot(q, (snap) => {
-      setPhotos(
-        snap.docs.map((d) => ({
-          id: d.id,
-          ...d.data(),
-        })) as Photo[]
-      );
-    });
+    const initGallery = async () => {
+      await ensureAuth(); // Espera o login anônimo antes de pedir os dados
+      const q = query(collection(db, "photos"), orderBy("createdAt", "desc"));
+      unsub = onSnapshot(q, (snap) => {
+        setPhotos(
+          snap.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+          })) as Photo[]
+        );
+      });
+    };
 
-    return () => unsub();
+    initGallery();
+
+    return () => unsub?.();
   }, []);
 
   // ☁️ upload firebase storage
