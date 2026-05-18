@@ -3,7 +3,6 @@ import { useNavigate } from "react-router";
 import { Heart, ArrowRight, Lock } from "lucide-react";
 import { motion } from "motion/react";
 import { isAuthenticated, saveAuthentication, validatePassword } from "../auth";
-import { ensureAuth } from "../../Firebase";
 
 const users = [
   { id: 1, name: "Geovanna", emoji: "👩🏻", color: "bg-pink-100" },
@@ -34,15 +33,9 @@ export default function Login() {
           return;
         }
 
-        try {
-          await ensureAuth();
-          localStorage.setItem("currentUser", user.name);
-          saveAuthentication();
-          navigate("/app", { replace: true });
-        } catch (e) {
-          console.error("Erro detalhado do Firebase:", e);
-          setError("Erro ao conectar com o serviço de imagens. Tente novamente.");
-        }
+        localStorage.setItem("currentUser", user.name);
+        saveAuthentication();
+        navigate("/app", { replace: true });
       }
     }
   };
