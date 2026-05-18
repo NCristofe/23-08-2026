@@ -83,10 +83,11 @@ export default function Login() {
         transition={{ delay: 0.3, duration: 0.6 }}
         className="w-full"
       >
-        <p className="text-center text-foreground/80 mb-6">Quem é você?</p>
+        <p className="text-center text-foreground/80 mb-6">Entrar como:</p>
         <div className="flex gap-4 mb-8">
           {users.map((user, index) => (
             <motion.button
+              type="button"
               key={user.id}
               initial={{ opacity: 0, x: index === 0 ? -20 : 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -105,7 +106,7 @@ export default function Login() {
         </div>
 
         <label className="block text-foreground/80 mb-3" htmlFor="password">
-          Senha do aplicativo
+          Insira a senha
         </label>
         <div className="relative mb-3">
           <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
