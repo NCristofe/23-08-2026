@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { Heart, ArrowRight, Lock } from "lucide-react";
 import { motion } from "motion/react";
 import { isAuthenticated, saveAuthentication, validatePassword } from "../auth";
+import { ensureAuth } from "../../Firebase";
 
 const users = [
   { id: 1, name: "Geovanna", emoji: "👩🏻", color: "bg-pink-100" },
@@ -21,7 +22,7 @@ export default function Login() {
     }
   }, [navigate]);
 
-  const handleLogin = (event: FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
 
@@ -33,9 +34,14 @@ export default function Login() {
           return;
         }
 
-        localStorage.setItem("currentUser", user.name);
-        saveAuthentication();
-        navigate("/app", { replace: true });
+        try {
+          await ensureAuth();
+          localStorage.setItem("currentUser", user.name);
+          saveAuthentication();
+          navigate("/app", { replace: true });
+        } catch (e) {
+          setError("Erro ao conectar com o serviço de imagens. Tente novamente.");
+        }
       }
     }
   };
