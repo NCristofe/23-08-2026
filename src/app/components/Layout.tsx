@@ -1,9 +1,14 @@
-import { Outlet, useLocation, useNavigate } from "react-router";
-import { Heart, MessageCircle, Image, Clock, Sparkles } from "lucide-react";
+import { Navigate, Outlet, useLocation, useNavigate } from "react-router";
+import { Heart, MessageCircle, Image, Clock, Sparkles, LogOut } from "lucide-react";
+import { clearAuthentication, isAuthenticated } from "../auth";
 
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  if (!isAuthenticated()) {
+    return <Navigate to="/" replace />;
+  }
 
   const navItems = [
     { path: "/app", icon: Heart, label: "Amor" },
@@ -12,6 +17,12 @@ export default function Layout() {
     { path: "/app/timeline", icon: Clock, label: "Marcos" },
     { path: "/app/extras", icon: Sparkles, label: "Extras" },
   ];
+
+  const handleLogout = () => {
+    clearAuthentication();
+    localStorage.removeItem("currentUser");
+    navigate("/", { replace: true });
+  };
 
   return (
     <div className="h-screen w-full max-w-md mx-auto bg-background flex flex-col relative overflow-hidden">
@@ -53,6 +64,15 @@ export default function Layout() {
               </button>
             );
           })}
+          <button
+            type="button"
+            onClick={handleLogout}
+            aria-label="Sair"
+            className="flex flex-col items-center gap-1 text-muted-foreground transition-all duration-300 hover:text-primary"
+          >
+            <LogOut className="w-6 h-6" />
+            <span className="text-xs">Sair</span>
+          </button>
         </div>
       </nav>
 
