@@ -1,8 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router";
 import { Heart, MessageCircle, Image, Clock, Sparkles, LogOut } from "lucide-react";
 import { clearAuthentication, isAuthenticated } from "../auth";
-import { ensureAuth } from "../../Firebase";
+import { db, ensureAuth } from "../../Firebase";
+import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
+import toast from "react-hot-toast";
 
 export default function Layout() {
   const location = useLocation();
@@ -13,6 +15,75 @@ export default function Layout() {
     if (isAuthenticated()) {
       ensureAuth().catch(console.error);
     }
+  }, []);
+
+  // Listeners para notificações globais
+  useEffect(() => {
+    if (!isAuthenticated()) return;
+
+    const currentUser = localStorage.getItem("currentUser");
+    
+    // Refs para ignorar a carga inicial de dados (não disparar toast para o passado)
+    let isFirstMsgs = true;
+    let isFirstPhotos = true;
+    let isFirstMilestones = true;
+
+    // Ouvir novas Mensagens
+    const qMessages = query(collection(db, "messages"), orderBy("createdAt", "desc"), limit(1));
+    const unsubMessages = onSnapshot(qMessages, (snapshot) => {
+      if (isFirstMsgs) {
+        isFirstMsgs = false;
+        return;
+      }
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const data = change.doc.data();
+          if (data.sender !== currentUser) {
+            toast(`Nova mensagem: "${data.text.substring(0, 30)}..."`, { icon: "💬" });
+          }
+        }
+      });
+    });
+
+    // Ouvir novas Fotos
+    const qPhotos = query(collection(db, "photos"), orderBy("createdAt", "desc"), limit(1));
+    const unsubPhotos = onSnapshot(qPhotos, (snapshot) => {
+      if (isFirstPhotos) {
+        isFirstPhotos = false;
+        return;
+      }
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const data = change.doc.data();
+          if (data.createdBy !== currentUser) {
+            toast.success("Nova foto adicionada na galeria! ❤️", { icon: "📸" });
+          }
+        }
+      });
+    });
+
+    // Ouvir novos Marcos (Timeline)
+    const qMilestones = query(collection(db, "milestones"), orderBy("createdAt", "desc"), limit(1));
+    const unsubMilestones = onSnapshot(qMilestones, (snapshot) => {
+      if (isFirstMilestones) {
+        isFirstMilestones = false;
+        return;
+      }
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const data = change.doc.data();
+          if (data.createdBy !== currentUser) {
+            toast(`Novo marco: ${data.title}`, { icon: "📅" });
+          }
+        }
+      });
+    });
+
+    return () => {
+      unsubMessages();
+      unsubPhotos();
+      unsubMilestones();
+    };
   }, []);
 
   if (!isAuthenticated()) {
