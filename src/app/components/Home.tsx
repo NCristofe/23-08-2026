@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
+import { motion } from "framer-motion";
 import { Heart, Calendar } from "lucide-react";
 
 type TimeElapsed = {
