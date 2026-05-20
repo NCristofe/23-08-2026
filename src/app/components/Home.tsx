@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Heart, Calendar } from "lucide-react";
 
 type TimeElapsed = {
@@ -174,10 +174,23 @@ type TimeUnitProps = {
 function TimeUnit({ value, label, small = false }: TimeUnitProps) {
   return (
     <div className="text-center">
-      <div className={`${small ? "text-3xl" : "text-4xl"}`}>
-        {value}
+      <div className={`relative overflow-hidden flex justify-center ${small ? "h-8 text-3xl" : "h-10 text-4xl"}`}>
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.span
+            key={value}
+            initial={{ y: 15, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -15, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="font-bold text-primary"
+          >
+            {value}
+          </motion.span>
+        </AnimatePresence>
       </div>
-      <div>{label}</div>
+      <div className="text-muted-foreground text-xs uppercase tracking-wider mt-1">
+        {label}
+      </div>
     </div>
   );
 }
