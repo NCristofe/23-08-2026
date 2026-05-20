@@ -1,7 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Heart, ArrowRight, Lock } from "lucide-react";
-import { motion } from "motion/react";
 import { motion } from "framer-motion";
 import { isAuthenticated, saveAuthentication, validatePassword } from "../auth";
 
