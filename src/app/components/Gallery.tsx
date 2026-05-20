@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "framer-motion";
 import { X, Heart, Trash2, Pencil } from "lucide-react";
+import toast from "react-hot-toast";
 
 import { db, storage, ensureAuth } from "../../Firebase";
 
@@ -90,11 +91,15 @@ export default function Gallery() {
         createdAt: new Date().toISOString(),
         createdBy: getUserName(),
       });
+
+      toast.success("Imagem enviada com sucesso! ❤️");
     } catch (err: any) {
       console.error("Erro ao enviar imagem:", err);
-      setUploadError(err?.code === "storage/unauthorized"
+      const message = err?.code === "storage/unauthorized"
         ? "Permissão negada. Verifique as regras do Firebase Storage."
-        : "Erro ao enviar imagem. Tente novamente.");
+        : "Erro ao enviar imagem. Tente novamente.";
+      setUploadError(message);
+      toast.error(message);
     } finally {
       setUploading(false);
     }
