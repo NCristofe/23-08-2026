@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 const AUTH_KEY = "appAuthenticated";
 
 const PASSWORD = import.meta.env.VITE_APP_PASSWORD?.trim() || "NossoAmor@2308";
