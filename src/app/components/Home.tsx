@@ -18,88 +18,92 @@ type Countdown = {
   seconds: number;
 };
 
+const START_DATE = new Date("2025-08-23T00:00:00");
+
+/**
+ * Calcula o tempo decorrido desde uma data inicial de forma legível.
+ */
+const getTimeElapsed = (start: Date): TimeElapsed => {
+  const now = new Date();
+  if (start > now) return { years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
+
+  let years = now.getFullYear() - start.getFullYear();
+  let months = now.getMonth() - start.getMonth();
+  let days = now.getDate() - start.getDate();
+  let hours = now.getHours() - start.getHours();
+  let minutes = now.getMinutes() - start.getMinutes();
+  let seconds = now.getSeconds() - start.getSeconds();
+
+  if (seconds < 0) {
+    seconds += 60;
+    minutes--;
+  }
+  if (minutes < 0) {
+    minutes += 60;
+    hours--;
+  }
+  if (hours < 0) {
+    hours += 24;
+    days--;
+  }
+  if (days < 0) {
+    // Pega o último dia do mês anterior para ajuste
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+    days += lastDayOfMonth;
+    months--;
+  }
+  if (months < 0) {
+    months += 12;
+    years--;
+  }
+
+  return { years, months, days, hours, minutes, seconds };
+};
+
+/**
+ * Calcula quanto tempo falta para o próximo aniversário e qual aniversário será.
+ */
+const getCountdownData = (start: Date) => {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+
+  let nextAnniversary = new Date(start);
+  nextAnniversary.setFullYear(currentYear);
+
+  // Se o aniversário já passou este ano, calcula para o próximo ano
+  if (nextAnniversary <= now) {
+    nextAnniversary.setFullYear(currentYear + 1);
+  }
+
+  const diff = nextAnniversary.getTime() - now.getTime();
+  const targetAnniversary = nextAnniversary.getFullYear() - start.getFullYear();
+
+  return {
+    countdown: {
+      days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+      minutes: Math.floor((diff / (1000 * 60)) % 60),
+      seconds: Math.floor((diff / 1000) % 60),
+    },
+    targetAnniversary,
+  };
+};
+
 export default function Home() {
-  const startDate = new Date("2025-08-23T00:00:00");
-
-  const [timeElapsed, setTimeElapsed] = useState<TimeElapsed>(calculateTimeElapsed());
-  const [countdown, setCountdown] = useState<Countdown>(calculateCountdown());
+  const [timeElapsed, setTimeElapsed] = useState<TimeElapsed>(() => getTimeElapsed(START_DATE));
+  const [countdownInfo, setCountdownInfo] = useState(() => getCountdownData(START_DATE));
   const [showCountdown, setShowCountdown] = useState(false);
-
-  function calculateTimeElapsed(): TimeElapsed {
-    const now = new Date();
-
-    let years = now.getFullYear() - startDate.getFullYear();
-    let months = now.getMonth() - startDate.getMonth();
-    let days = now.getDate() - startDate.getDate();
-
-    let hours = now.getHours() - startDate.getHours();
-    let minutes = now.getMinutes() - startDate.getMinutes();
-    let seconds = now.getSeconds() - startDate.getSeconds();
-
-    if (seconds < 0) {
-      seconds += 60;
-      minutes--;
-    }
-
-    if (minutes < 0) {
-      minutes += 60;
-      hours--;
-    }
-
-    if (hours < 0) {
-      hours += 24;
-      days--;
-    }
-
-    if (days < 0) {
-      const lastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-      days += lastMonth.getDate();
-      months--;
-    }
-
-    if (months < 0) {
-      months += 12;
-      years--;
-    }
-
-    return { years, months, days, hours, minutes, seconds };
-  }
-
-  function calculateCountdown(): Countdown {
-    const now = new Date();
-
-    let nextAnniversary = new Date(startDate);
-    nextAnniversary.setFullYear(now.getFullYear());
-
-    if (nextAnniversary < now) {
-      nextAnniversary.setFullYear(now.getFullYear() + 1);
-    }
-
-    const diff = nextAnniversary.getTime() - now.getTime();
-
-    const seconds = Math.floor(diff / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    return {
-      days,
-      hours: hours % 24,
-      minutes: minutes % 60,
-      seconds: seconds % 60,
-    };
-  }
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setTimeElapsed(calculateTimeElapsed());
-      setCountdown(calculateCountdown());
+      setTimeElapsed(getTimeElapsed(START_DATE));
+      setCountdownInfo(getCountdownData(START_DATE));
     }, 1000);
 
     return () => clearInterval(interval);
   }, []);
 
-  const years = new Date().getFullYear() - startDate.getFullYear();
+  const { countdown, targetAnniversary } = countdownInfo;
 
   return (
     <div className="min-h-screen w-full p-6 pt-8">
@@ -108,12 +112,8 @@ export default function Home() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-8"
       >
-        <h1 className="font-romantic text-5xl text-primary mb-1">
-          Nosso Amor
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          Cada segundo ao seu lado é especial
-        </p>
+        <h1 className="font-romantic text-5xl text-primary mb-1">Nosso Amor</h1>
+        <p className="text-muted-foreground text-sm">Cada segundo ao seu lado é especial</p>
       </motion.div>
 
       <div className="bg-white rounded-3xl shadow-lg p-8 mb-6">
@@ -138,24 +138,28 @@ export default function Home() {
 
       <button
         onClick={() => setShowCountdown(!showCountdown)}
-        className="w-full bg-pink-400 text-white rounded-full py-4"
+        className="w-full bg-pink-400 text-white rounded-full py-4 transition-colors hover:bg-pink-500"
       >
         {showCountdown ? "Ocultar contagem" : "Ver contagem regressiva"}
       </button>
 
       {showCountdown && (
-        <div className="mt-6 bg-white rounded-3xl shadow-lg p-8">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-6 bg-white rounded-3xl shadow-lg p-8"
+        >
           <h3 className="text-center mb-6">
-            Faltam para {years + 0} ano de amor 💕
+            Faltam para {targetAnniversary} {targetAnniversary === 1 ? "ano" : "anos"} de amor 💕
           </h3>
 
           <div className="grid grid-cols-2 gap-4">
             <TimeUnit value={countdown.days} label="Dias" />
             <TimeUnit value={countdown.hours} label="Horas" />
-            <TimeUnit value={countdown.minutes} label="Minutos" />
-            <TimeUnit value={countdown.seconds} label="Segundos" />
+            <TimeUnit value={countdown.minutes} label="Min" />
+            <TimeUnit value={countdown.seconds} label="Seg" />
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );
