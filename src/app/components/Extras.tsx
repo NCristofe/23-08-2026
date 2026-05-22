@@ -1,32 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Heart, Gift, Star, Plus, X } from "lucide-react";
-import { addDoc, collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import { db } from "../../Firebase";
+import { Sparkles, Heart, Gift, Star } from "lucide-react";
 
-type QuizQuestion = {
-  id: string;
-  question: string;
-  options: string[];
-  correct: number;
-  createdAt?: string;
-};
-
-const defaultQuizQuestions: QuizQuestion[] = [
+const quizQuestions = [
   {
-    id: "default-first-date",
     question: "Qual foi o lugar do nosso primeiro encontro?",
     options: ["Café Central", "Parque da Cidade", "Cinema", "Restaurante Italiano"],
     correct: 1,
   },
   {
-    id: "default-song",
     question: "Qual é a nossa música favorita?",
     options: ["Perfect - Ed Sheeran", "All of Me - John Legend", "A Thousand Years", "Thinking Out Loud"],
     correct: 0,
   },
   {
-    id: "default-gift",
     question: "Qual foi o primeiro presente que você me deu?",
     options: ["Flores", "Chocolates", "Um livro", "Uma carta"],
     correct: 3,
@@ -43,57 +30,12 @@ const surprises = [
 ];
 
 export default function Extras() {
-  const [createdQuestions, setCreatedQuestions] = useState<QuizQuestion[]>([]);
   const [quizActive, setQuizActive] = useState(false);
-  const [creatingQuiz, setCreatingQuiz] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [surprise, setSurprise] = useState<string | null>(null);
   const [hearts, setHearts] = useState<{ id: number; x: number }[]>([]);
-  const [newQuestion, setNewQuestion] = useState("");
-  const [newOptions, setNewOptions] = useState(["", "", "", ""]);
-  const [correctOption, setCorrectOption] = useState(0);
-  const [formError, setFormError] = useState("");
-  const [savingQuestion, setSavingQuestion] = useState(false);
-
-  const quizQuestions = useMemo(
-    () => [...defaultQuizQuestions, ...createdQuestions],
-    [createdQuestions]
-  );
-
-  useEffect(() => {
-    if (!db) return;
-
-    const q = query(collection(db, "loveQuizQuestions"), orderBy("createdAt", "asc"));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const questions = snapshot.docs.map((doc) => {
-        const data = doc.data();
-
-        return {
-          id: doc.id,
-          question: data.question ?? "",
-          options: Array.isArray(data.options) ? data.options : [],
-          correct: Number(data.correct ?? 0),
-          createdAt: data.createdAt,
-        };
-      });
-
-      setCreatedQuestions(
-        questions.filter(
-          (item) =>
-            item.question &&
-            item.options.length === 4 &&
-            item.options.every(Boolean) &&
-            item.correct >= 0 &&
-            item.correct <= 3
-        )
-      );
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   const handleAnswer = (index: number) => {
     if (index === quizQuestions[currentQuestion].correct) {
@@ -112,68 +54,6 @@ export default function Extras() {
     setCurrentQuestion(0);
     setScore(0);
     setShowResult(false);
-  };
-
-  const startQuiz = () => {
-    setCreatingQuiz(false);
-    setCurrentQuestion(0);
-    setScore(0);
-    setShowResult(false);
-    setQuizActive(true);
-  };
-
-  const openCreateQuiz = () => {
-    setQuizActive(false);
-    setShowResult(false);
-    setCreatingQuiz(true);
-  };
-
-  const updateOption = (index: number, value: string) => {
-    setNewOptions((current) =>
-      current.map((option, optionIndex) => (optionIndex === index ? value : option))
-    );
-  };
-
-  const resetCreateForm = () => {
-    setNewQuestion("");
-    setNewOptions(["", "", "", ""]);
-    setCorrectOption(0);
-    setFormError("");
-  };
-
-  const handleCreateQuestion = async () => {
-    const question = newQuestion.trim();
-    const options = newOptions.map((option) => option.trim());
-
-    if (!question || options.some((option) => !option)) {
-      setFormError("Preencha a pergunta e as quatro alternativas.");
-      return;
-    }
-
-    if (!db) {
-      setFormError("Firebase não configurado para salvar novas perguntas.");
-      return;
-    }
-
-    try {
-      setSavingQuestion(true);
-      setFormError("");
-
-      await addDoc(collection(db, "loveQuizQuestions"), {
-        question,
-        options,
-        correct: correctOption,
-        createdAt: new Date().toISOString(),
-      });
-
-      resetCreateForm();
-      setCreatingQuiz(false);
-    } catch (error) {
-      console.error("Erro ao criar pergunta do quiz:", error);
-      setFormError("Não consegui salvar agora. Tente de novo em instantes.");
-    } finally {
-      setSavingQuestion(false);
-    }
   };
 
   const showSurprise = () => {
@@ -211,33 +91,19 @@ export default function Extras() {
         </p>
       </motion.div>
 
-      {!quizActive && !showResult && !creatingQuiz ? (
+      {!quizActive && !showResult ? (
         <div className="space-y-4">
           <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            onClick={startQuiz}
+            onClick={() => setQuizActive(true)}
             className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
           >
             <Star className="w-12 h-12 mx-auto mb-3" />
             <h3 className="mb-2">Quiz do Amor</h3>
             <p className="text-sm text-white/90">
-              Teste seus conhecimentos sobre nós! {quizQuestions.length} perguntas
-            </p>
-          </motion.button>
-
-          <motion.button
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
-            onClick={openCreateQuiz}
-            className="w-full bg-white text-foreground rounded-3xl p-6 shadow-lg border border-pink-100 hover:shadow-xl transition-all duration-300 hover:scale-105"
-          >
-            <Plus className="w-10 h-10 text-primary mx-auto mb-3" />
-            <h3 className="mb-2">Criar pergunta</h3>
-            <p className="text-sm text-muted-foreground">
-              Adicione novas memórias ao Quiz do Amor
+              Teste seus conhecimentos sobre nós!
             </p>
           </motion.button>
 
@@ -259,118 +125,25 @@ export default function Extras() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-gradient-to-br from-pink-100 to-purple-100 rounded-3xl p-8 text-center"
+            className="bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-950/20 dark:to-purple-950/20 rounded-3xl p-8 text-center border border-transparent dark:border-pink-900/20"
           >
             <Sparkles className="w-12 h-12 text-primary mx-auto mb-3" />
-            <p className="text-foreground/80 font-romantic text-xl">
+            <p className="text-foreground/80 dark:text-slate-300 font-romantic text-xl">
               Obrigado por fazer parte da minha vida 💕
             </p>
           </motion.div>
         </div>
-      ) : creatingQuiz ? (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-3xl p-6 shadow-lg"
-        >
-          <div className="flex items-start justify-between gap-4 mb-6">
-            <div>
-              <h2 className="font-romantic text-4xl text-primary">
-                Criar pergunta
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Monte uma pergunta com quatro alternativas.
-              </p>
-            </div>
-
-            <button
-              onClick={() => {
-                resetCreateForm();
-                setCreatingQuiz(false);
-              }}
-              className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-foreground"
-              aria-label="Fechar criação de pergunta"
-            >
-              <X size={18} />
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-muted-foreground mb-2">
-                Pergunta
-              </label>
-              <textarea
-                value={newQuestion}
-                onChange={(event) => setNewQuestion(event.target.value)}
-                placeholder="Ex: Onde foi nosso primeiro beijo?"
-                className="w-full min-h-24 rounded-2xl border border-pink-100 bg-pink-50/40 px-4 py-3 outline-none focus:border-primary"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Alternativas
-              </p>
-
-              {newOptions.map((option, index) => (
-                <div key={index} className="flex gap-3">
-                  <button
-                    onClick={() => setCorrectOption(index)}
-                    className={`w-11 h-11 shrink-0 rounded-full border flex items-center justify-center transition-colors ${
-                      correctOption === index
-                        ? "bg-primary text-white border-primary"
-                        : "bg-white text-foreground border-pink-100"
-                    }`}
-                    aria-label={`Marcar alternativa ${index + 1} como correta`}
-                  >
-                    {index + 1}
-                  </button>
-                  <input
-                    value={option}
-                    onChange={(event) => updateOption(index, event.target.value)}
-                    placeholder={`Alternativa ${index + 1}`}
-                    className="min-w-0 flex-1 rounded-full border border-pink-100 bg-pink-50/40 px-4 py-3 outline-none focus:border-primary"
-                  />
-                </div>
-              ))}
-            </div>
-
-            {formError && (
-              <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600">
-                {formError}
-              </p>
-            )}
-
-            <div className="flex gap-3">
-              <button
-                onClick={handleCreateQuestion}
-                disabled={savingQuestion}
-                className="flex-1 bg-primary text-white rounded-full py-3 px-5 hover:bg-primary/90 disabled:opacity-60 transition-colors duration-300"
-              >
-                {savingQuestion ? "Salvando..." : "Salvar pergunta"}
-              </button>
-
-              <button
-                onClick={resetCreateForm}
-                className="bg-secondary text-foreground rounded-full py-3 px-5 hover:bg-secondary/80 transition-colors duration-300"
-              >
-                Limpar
-              </button>
-            </div>
-          </div>
-        </motion.div>
       ) : quizActive && !showResult ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-3xl p-8 shadow-lg"
+          className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-lg transition-colors"
         >
           <div className="text-center mb-6">
-            <div className="text-sm text-muted-foreground mb-2">
+            <div className="text-sm text-muted-foreground dark:text-slate-400 mb-2">
               Pergunta {currentQuestion + 1} de {quizQuestions.length}
             </div>
-            <h3 className="text-foreground">
+            <h3 className="text-foreground dark:text-slate-100">
               {quizQuestions[currentQuestion].question}
             </h3>
           </div>
@@ -383,7 +156,7 @@ export default function Extras() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
                 onClick={() => handleAnswer(index)}
-                className="w-full bg-secondary hover:bg-primary hover:text-white text-foreground rounded-full py-4 px-6 transition-all duration-300 hover:scale-105"
+                className="w-full bg-secondary dark:bg-slate-800 hover:bg-primary hover:text-white text-foreground dark:text-slate-200 rounded-full py-4 px-6 transition-all duration-300 hover:scale-105"
               >
                 {option}
               </motion.button>
@@ -394,16 +167,16 @@ export default function Extras() {
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-3xl p-8 shadow-lg text-center"
+          className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-lg text-center transition-colors"
         >
           <Heart className="w-16 h-16 text-primary fill-current mx-auto mb-4" />
           <h2 className="font-romantic text-4xl text-primary mb-4">
             Resultado!
           </h2>
-          <p className="text-3xl mb-6">
+          <p className="text-3xl mb-6 dark:text-slate-100">
             {score} de {quizQuestions.length}
           </p>
-          <p className="text-foreground/80 mb-6">
+          <p className="text-foreground/80 dark:text-slate-300 mb-6">
             {score === quizQuestions.length
               ? "Perfeito! Você me conhece muito bem! 💕"
               : score >= quizQuestions.length / 2
@@ -432,7 +205,7 @@ export default function Extras() {
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.5, opacity: 0 }}
-              className="bg-white rounded-3xl p-8 max-w-sm shadow-2xl text-center relative"
+              className="bg-white dark:bg-slate-900 rounded-3xl p-8 max-w-sm shadow-2xl text-center relative transition-colors"
             >
               <motion.div
                 animate={{ rotate: 360 }}
@@ -440,7 +213,7 @@ export default function Extras() {
               >
                 <Sparkles className="w-16 h-16 text-primary mx-auto mb-4" />
               </motion.div>
-              <p className="text-foreground font-romantic text-2xl">
+              <p className="text-foreground dark:text-slate-100 font-romantic text-2xl">
                 {surprise}
               </p>
             </motion.div>
