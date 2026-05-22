@@ -49,6 +49,8 @@ export default function Gallery() {
     let unsub: (() => void) | undefined;
 
     const initGallery = async () => {
+      if (!db) return;
+
       await ensureAuth(); // Espera o login anônimo antes de pedir os dados
       const q = query(collection(db, "photos"), orderBy("createdAt", "desc"));
       unsub = onSnapshot(q, (snap) => {
@@ -68,6 +70,10 @@ export default function Gallery() {
 
   // ☁️ upload firebase storage
   async function uploadImage(file: File) {
+    if (!storage) {
+      throw new Error("Firebase Storage não configurado.");
+    }
+
     await ensureAuth();
     const fileRef = ref(storage, `photos/${Date.now()}-${file.name}`);
     await uploadBytes(fileRef, file);
@@ -109,6 +115,8 @@ export default function Gallery() {
 
   // ❌ DELETE
   async function handleDelete(id: string) {
+    if (!db) return;
+
     await deleteDoc(doc(db, "photos", id));
     setSelectedPhoto(null);
   }
@@ -130,7 +138,7 @@ export default function Gallery() {
 
   // ✏️ EDIT CAPTION
   async function saveCaption() {
-    if (!selectedPhoto) return;
+    if (!selectedPhoto || !db) return;
 
     await updateDoc(doc(db, "photos", selectedPhoto.id), {
       caption,
