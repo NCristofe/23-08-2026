@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import { Send, Heart } from "lucide-react";
+import { format } from "date-fns";
 import { db } from "..//../Firebase";
 import {
   collection,
@@ -64,13 +65,10 @@ export default function Messages() {
     if (!newMessage.trim()) return;
 
     try {
-      const now = new Date();
-      const time = `${now.getHours()}:${now.getMinutes().toString().padStart(2, "0")}`;
-
       await addDoc(collection(db, "messages"), {
         text: newMessage,
         sender: currentUser ?? "Anônimo",
-        time,
+        time: format(new Date(), "HH:mm"),
         createdAt: new Date(),
       });
 
