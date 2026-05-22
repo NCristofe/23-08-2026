@@ -99,7 +99,7 @@ export default function Messages() {
   };
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="flex flex-col h-[calc(100vh-80px)] bg-slate-50 dark:bg-slate-950 transition-colors">
       {/* HEADER */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -111,8 +111,8 @@ export default function Messages() {
             <Heart className="w-6 h-6 text-white fill-current" />
           </div>
           <div>
-            <h2 className="text-slate-900 dark:text-slate-100">Nosso Chat</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <h2 className="text-slate-900 dark:text-slate-100 font-bold">Nosso Chat</h2>
+            <p className="text-xs text-slate-600 dark:text-slate-400">
               Olá, {currentUser} 💕
             </p>
           </div>
@@ -120,7 +120,7 @@ export default function Messages() {
       </motion.div>
 
       {/* MENSAGENS */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-950">
         <AnimatePresence>
           {messages.map((message, index) => {
             const isMe = currentUser !== null && message.sender === currentUser;
@@ -134,19 +134,19 @@ export default function Messages() {
                 className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
               >
                 {/* Nome do remetente */}
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 px-2">
+                <p className="text-xs text-slate-600 dark:text-slate-400 mb-1 px-2 font-medium">
                   {isMe ? "Você" : message.sender}
                 </p>
 
                 <div
                   className={`max-w-[75%] rounded-3xl p-4 ${
                     isMe
-                      ? "bg-primary text-white rounded-tr-sm"
+                      ? "bg-pink-500 text-white rounded-tr-sm"
                       : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-tl-sm shadow-md"
                   }`}
                 >
-                  <p className={`text-sm mb-1 ${isMe ? "text-white" : "text-slate-800 dark:text-slate-100"}`}>{message.text}</p>
-                  <p className={`text-xs opacity-70 text-right ${isMe ? "text-white" : "text-slate-800 dark:text-slate-100"}`}>{message.time}</p>
+                  <p className="text-sm mb-1 leading-relaxed">{message.text}</p>
+                  <p className="text-[10px] opacity-70 text-right">{message.time}</p>
                 </div>
               </motion.div>
             );
@@ -179,7 +179,7 @@ export default function Messages() {
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             placeholder="Digite sua mensagem..."
-            className="flex-1 px-4 py-3 rounded-full bg-gray-100 dark:bg-slate-800 text-slate-900 dark:text-white outline-none"
+            className="flex-1 px-4 py-3 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white outline-none border border-slate-200 dark:border-slate-700"
           />
           <button
             onClick={handleSend}
