@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
+import { intervalToDuration, differenceInSeconds, addYears, isBefore } from "date-fns";
 import { Heart, Calendar } from "lucide-react";
 
 type TimeElapsed = {
@@ -25,37 +26,14 @@ const START_DATE = new Date("2025-08-23T00:00:00");
  */
 const getTimeElapsed = (start: Date): TimeElapsed => {
   const now = new Date();
-  if (start > now) return { years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
+  const duration = intervalToDuration({ start, end: now });
 
-  let years = now.getFullYear() - start.getFullYear();
-  let months = now.getMonth() - start.getMonth();
-  let days = now.getDate() - start.getDate();
-  let hours = now.getHours() - start.getHours();
-  let minutes = now.getMinutes() - start.getMinutes();
-  let seconds = now.getSeconds() - start.getSeconds();
-
-  if (seconds < 0) {
-    seconds += 60;
-    minutes--;
-  }
-  if (minutes < 0) {
-    minutes += 60;
-    hours--;
-  }
-  if (hours < 0) {
-    hours += 24;
-    days--;
-  }
-  if (days < 0) {
-    // Pega o último dia do mês anterior para ajuste
-    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
-    days += lastDayOfMonth;
-    months--;
-  }
-  if (months < 0) {
-    months += 12;
-    years--;
-  }
+  const years = duration.years ?? 0;
+  const months = duration.months ?? 0;
+  const days = duration.days ?? 0;
+  const hours = duration.hours ?? 0;
+  const minutes = duration.minutes ?? 0;
+  const seconds = duration.seconds ?? 0;
 
   return { years, months, days, hours, minutes, seconds };
 };
@@ -66,24 +44,24 @@ const getTimeElapsed = (start: Date): TimeElapsed => {
 const getCountdownData = (start: Date) => {
   const now = new Date();
   const currentYear = now.getFullYear();
-
+  
+  // Define o próximo aniversário baseado no ano atual
   let nextAnniversary = new Date(start);
   nextAnniversary.setFullYear(currentYear);
 
-  // Se o aniversário já passou este ano, calcula para o próximo ano
-  if (nextAnniversary <= now) {
-    nextAnniversary.setFullYear(currentYear + 1);
+  if (isBefore(nextAnniversary, now)) {
+    nextAnniversary = addYears(nextAnniversary, 1);
   }
 
-  const diff = nextAnniversary.getTime() - now.getTime();
+  const diffSeconds = differenceInSeconds(nextAnniversary, now);
   const targetAnniversary = nextAnniversary.getFullYear() - start.getFullYear();
 
   return {
     countdown: {
-      days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-      hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-      minutes: Math.floor((diff / (1000 * 60)) % 60),
-      seconds: Math.floor((diff / 1000) % 60),
+      days: Math.floor(diffSeconds / (60 * 60 * 24)),
+      hours: Math.floor((diffSeconds / (60 * 60)) % 24),
+      minutes: Math.floor((diffSeconds / 60) % 60),
+      seconds: diffSeconds % 60,
     },
     targetAnniversary,
   };
@@ -184,7 +162,7 @@ function TimeUnit({ value, label, small = false }: TimeUnitProps) {
             exit={{ y: -15, opacity: 0 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="font-bold text-primary"
-          >
+            >
             {value}
           </motion.span>
         </AnimatePresence>
