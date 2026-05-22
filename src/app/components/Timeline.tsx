@@ -141,26 +141,26 @@ export default function Timeline() {
 
       {/* FORM */}
       {showForm && (
-        <div className="bg-white p-6 rounded-2xl shadow mb-6">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-lg mb-6 border border-transparent dark:border-slate-800 transition-colors">
           <input
             placeholder="Título"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full mb-3 p-2 border rounded"
+            className="w-full mb-3 p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-pink-400"
           />
 
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full mb-3 p-2 border rounded"
+            className="w-full mb-3 p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-pink-400"
           />
 
           <textarea
             placeholder="Descrição"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full mb-3 p-2 border rounded"
+            className="w-full mb-3 p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-pink-400"
           />
 
           <div className="flex gap-2">
@@ -184,25 +184,25 @@ export default function Timeline() {
       {/* LISTA */}
       <div className="space-y-6">
         {milestones.map((item) => (
-          <div key={item.id} className="bg-white p-4 rounded-2xl shadow">
+          <div key={item.id} className="bg-white dark:bg-slate-900 p-5 rounded-3xl shadow-md border border-transparent dark:border-slate-800 transition-colors">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-gray-500">{item.date}</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400">{item.date}</span>
 
               <div className="flex gap-2">
-                <button onClick={() => handleEdit(item)}>
+                <button onClick={() => handleEdit(item)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors dark:text-slate-300">
                   <Pencil size={18} />
                 </button>
 
-                <button onClick={() => handleDelete(item.id)}>
+                <button onClick={() => handleDelete(item.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors text-red-500">
                   <Trash2 size={18} />
                 </button>
               </div>
             </div>
 
-            <h3 className="font-bold">{item.title}</h3>
-            <p className="text-sm text-gray-600">{item.description}</p>
+            <h3 className="font-bold text-slate-900 dark:text-slate-100">{item.title}</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{item.description}</p>
 
-            <div className="mt-3 text-xs text-gray-400">
+            <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 uppercase tracking-wider">
               <p>Criado por: {item.createdBy}</p>
               <p>Atualizado por: {item.updatedBy}</p>
             </div>
