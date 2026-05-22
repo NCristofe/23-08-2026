@@ -94,12 +94,12 @@ export default function Home() {
         <p className="text-muted-foreground text-sm">Cada segundo ao seu lado é especial</p>
       </motion.div>
 
-      <div className="bg-white rounded-3xl shadow-lg p-8 mb-6">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-lg dark:shadow-pink-900/10 p-8 mb-6 transition-colors">
         <div className="flex justify-center mb-4">
           <Heart className="w-12 h-12 text-primary fill-current" />
         </div>
 
-        <h2 className="text-center mb-6">Juntos há</h2>
+        <h2 className="text-center mb-6 dark:text-slate-200">Juntos há</h2>
 
         <div className="grid grid-cols-3 gap-4 mb-6">
           <TimeUnit value={timeElapsed.years} label="Anos" />
@@ -125,9 +125,9 @@ export default function Home() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-6 bg-white rounded-3xl shadow-lg p-8"
+          className="mt-6 bg-white dark:bg-slate-900 rounded-3xl shadow-lg p-8 transition-colors"
         >
-          <h3 className="text-center mb-6">
+          <h3 className="text-center mb-6 dark:text-slate-200">
             {targetAnniversary === 1 ? "Falta" : "Faltam"} para {targetAnniversary}{" "}
             {targetAnniversary === 1 ? "ano" : "anos"} de Namoro! 💕
           </h3>
@@ -162,12 +162,12 @@ function TimeUnit({ value, label, small = false }: TimeUnitProps) {
             exit={{ y: -15, opacity: 0 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="font-bold text-primary"
-            >
+                                                                                                            >
             {value}
           </motion.span>
         </AnimatePresence>
       </div>
-      <div className="text-muted-foreground text-xs uppercase tracking-wider mt-1">
+      <div className="text-muted-foreground dark:text-slate-400 text-xs uppercase tracking-wider mt-1">
         {label}
       </div>
     </div>
