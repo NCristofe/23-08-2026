@@ -86,7 +86,7 @@ export default function Extras() {
         <h1 className="font-romantic text-5xl text-primary mb-1">
           Extras Especiais
         </h1>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-slate-500 dark:text-slate-400 text-sm">
           Surpresas e diversão para nós dois
         </p>
       </motion.div>
@@ -140,7 +140,7 @@ export default function Extras() {
           className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-lg transition-colors"
         >
           <div className="text-center mb-6">
-            <div className="text-sm text-muted-foreground dark:text-slate-400 mb-2">
+            <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">
               Pergunta {currentQuestion + 1} de {quizQuestions.length}
             </div>
             <h3 className="text-foreground dark:text-slate-100">
