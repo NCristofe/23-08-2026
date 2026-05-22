@@ -91,7 +91,7 @@ export default function Home() {
         className="text-center mb-8"
       >
         <h1 className="font-romantic text-5xl text-primary mb-1">Nosso Amor</h1>
-        <p className="text-muted-foreground text-sm">Cada segundo ao seu lado é especial</p>
+        <p className="text-slate-500 dark:text-slate-400 text-sm">Cada segundo ao seu lado é especial</p>
       </motion.div>
 
       <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-lg dark:shadow-pink-900/10 p-8 mb-6 transition-colors">
@@ -167,7 +167,7 @@ function TimeUnit({ value, label, small = false }: TimeUnitProps) {
           </motion.span>
         </AnimatePresence>
       </div>
-      <div className="text-muted-foreground dark:text-slate-400 text-xs uppercase tracking-wider mt-1">
+      <div className="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider mt-1">
         {label}
       </div>
     </div>
