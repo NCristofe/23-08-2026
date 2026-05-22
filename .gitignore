@@ -26,3 +26,6 @@ Thumbs.db
 # IDEs
 .vscode/
 .idea/
+
+# PWA Dev Distribution
+dev-dist/
