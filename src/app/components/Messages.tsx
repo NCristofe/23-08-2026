@@ -39,6 +39,8 @@ export default function Messages() {
   }, [currentUser, navigate]);
 
   useEffect(() => {
+    if (!db) return;
+
     const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -62,7 +64,7 @@ export default function Messages() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !db) return;
 
     try {
       await addDoc(collection(db, "messages"), {
@@ -79,6 +81,8 @@ export default function Messages() {
   };
 
   const handleQuickMessage = async (text: string) => {
+    if (!db) return;
+
     try {
       const now = new Date();
       const time = `${now.getHours()}:${now.getMinutes().toString().padStart(2, "0")}`;
