@@ -42,6 +42,8 @@ export default function Timeline() {
 
   // 🔥 usuário real
   useEffect(() => {
+    if (!auth) return;
+
     const unsub = onAuthStateChanged(auth, (u) => setUser(u));
     return () => unsub();
   }, []);
@@ -52,6 +54,8 @@ export default function Timeline() {
 
   // 🔥 carregar dados em tempo real
   useEffect(() => {
+    if (!db) return;
+
     const q = query(collection(db, "milestones"), orderBy("createdAt", "desc"));
 
     const unsub = onSnapshot(q, (snapshot) => {
@@ -68,7 +72,7 @@ export default function Timeline() {
 
   // ➕ ou ✏️ salvar
   async function handleSave() {
-    if (!title || !date) return;
+    if (!title || !date || !db) return;
 
     const now = new Date().toISOString();
 
@@ -100,6 +104,8 @@ export default function Timeline() {
 
   // ❌ deletar
   async function handleDelete(id: string) {
+    if (!db) return;
+
     await deleteDoc(doc(db, "milestones", id));
   }
 
