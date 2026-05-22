@@ -116,7 +116,7 @@ export default function Home() {
 
       <button
         onClick={() => setShowCountdown(!showCountdown)}
-        className="w-full bg-pink-400 text-white rounded-full py-4 transition-colors hover:bg-pink-500"
+        className="w-full bg-pink-400 text-white rounded-full py-4 transition-all hover:bg-pink-500 dark:bg-pink-600 dark:hover:bg-pink-500 shadow-md active:scale-95"
       >
         {showCountdown ? "Ocultar contagem" : "Ver contagem regressiva"}
       </button>
