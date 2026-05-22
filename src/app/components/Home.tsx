@@ -150,7 +150,8 @@ export default function Home() {
           className="mt-6 bg-white rounded-3xl shadow-lg p-8"
         >
           <h3 className="text-center mb-6">
-            Faltam para {targetAnniversary} {targetAnniversary === 1 ? "ano" : "anos"} de Namoro! 💕
+            {targetAnniversary === 1 ? "Falta" : "Faltam"} para {targetAnniversary}{" "}
+            {targetAnniversary === 1 ? "ano" : "anos"} de Namoro! 💕
           </h3>
 
           <div className="grid grid-cols-2 gap-4">
