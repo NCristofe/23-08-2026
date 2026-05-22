@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router";
 import { Heart, MessageCircle, Image, Clock, Sparkles, LogOut } from "lucide-react";
 import { clearAuthentication, isAuthenticated } from "../auth";
-import { db, ensureAuth } from "../../Firebase";
+import { db, ensureAuth, hasFirebaseConfig, missingFirebaseConfig } from "../../Firebase";
 import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
 import toast from "react-hot-toast";
 
@@ -12,14 +12,14 @@ export default function Layout() {
 
   useEffect(() => {
     // Garante que o Firebase esteja autenticado sempre que o layout carregar
-    if (isAuthenticated()) {
+    if (isAuthenticated() && hasFirebaseConfig) {
       ensureAuth().catch(console.error);
     }
   }, []);
 
   // Listeners para notificações globais
   useEffect(() => {
-    if (!isAuthenticated()) return;
+    if (!isAuthenticated() || !db) return;
 
     const currentUser = localStorage.getItem("currentUser");
     
@@ -86,8 +86,40 @@ export default function Layout() {
     };
   }, []);
 
+  const handleLogout = () => {
+    clearAuthentication();
+    localStorage.removeItem("currentUser");
+    navigate("/", { replace: true });
+  };
+
   if (!isAuthenticated()) {
     return <Navigate to="/" replace />;
+  }
+
+  if (!hasFirebaseConfig) {
+    return (
+      <div className="min-h-screen w-full max-w-md mx-auto bg-background flex items-center justify-center p-6">
+        <div className="bg-white rounded-3xl shadow-lg p-6 text-center">
+          <Heart className="w-12 h-12 text-primary fill-current mx-auto mb-4" />
+          <h1 className="text-2xl text-primary mb-3">Firebase não configurado</h1>
+          <p className="text-sm text-muted-foreground mb-4">
+            Preencha o arquivo .env.local com as chaves do seu projeto Firebase e reinicie o servidor.
+          </p>
+          <div className="rounded-2xl bg-secondary p-3 text-left text-xs text-muted-foreground">
+            {missingFirebaseConfig.map((key) => (
+              <p key={key}>{key}</p>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="mt-5 w-full rounded-full bg-primary px-4 py-3 text-primary-foreground"
+          >
+            Voltar para login
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const navItems = [
@@ -97,12 +129,6 @@ export default function Layout() {
     { path: "/app/timeline", icon: Clock, label: "Marcos" },
     { path: "/app/extras", icon: Sparkles, label: "Extras" },
   ];
-
-  const handleLogout = () => {
-    clearAuthentication();
-    localStorage.removeItem("currentUser");
-    navigate("/", { replace: true });
-  };
 
   return (
     <div className="h-screen w-full max-w-md mx-auto bg-background flex flex-col relative overflow-hidden">
