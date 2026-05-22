@@ -148,13 +148,13 @@ export default function Gallery() {
   }
 
   return (
-    <div className="min-h-screen w-full p-6 pt-8">
-      <h1 className="text-center text-4xl text-primary mb-6">
+    <div className="min-h-screen w-full p-6 pt-8 transition-colors">
+      <h1 className="text-center text-4xl text-primary dark:text-pink-400 mb-6 font-romantic">
         Nossas Memórias 💕
       </h1>
 
       {/* ADD */}
-      <label className={`text-white p-3 rounded-xl block text-center mb-2 cursor-pointer transition-opacity ${uploading ? "bg-pink-300 opacity-60 pointer-events-none" : "bg-pink-400"}`}>
+      <label className={`text-white p-3 rounded-xl block text-center mb-4 cursor-pointer transition-all shadow-md ${uploading ? "bg-pink-300 opacity-60 pointer-events-none" : "bg-pink-400 hover:bg-pink-500 dark:bg-pink-600 dark:hover:bg-pink-500"}`}>
         {uploading ? "Enviando... ⏳" : "Adicionar Foto ❤️"}
         <input
           type="file"
@@ -174,7 +174,7 @@ export default function Gallery() {
         {photos.map((photo) => (
           <motion.div
             key={photo.id}
-            className="relative aspect-square rounded-3xl overflow-hidden cursor-pointer"
+            className="relative aspect-square rounded-3xl overflow-hidden cursor-pointer shadow-sm hover:shadow-lg transition-shadow border border-transparent dark:border-slate-800"
             onClick={() => setSelectedPhoto(photo)}
           >
             <img
@@ -206,15 +206,15 @@ export default function Gallery() {
               />
 
               {/* CAPTION */}
-              <div className="bg-white/10 text-white p-4 rounded-xl mb-4">
+              <div className="bg-white/10 dark:bg-slate-800/50 backdrop-blur-md text-white p-4 rounded-xl mb-4 border border-white/10">
                 {editingCaption ? (
                   <>
                     <input
                       value={caption}
                       onChange={(e) => setCaption(e.target.value)}
-                      className="w-full p-2 text-black rounded mb-2"
+                      className="w-full p-2 text-black dark:text-white dark:bg-slate-700 rounded mb-2 outline-none border border-transparent focus:border-pink-400"
                     />
-                    <button onClick={saveCaption}>Salvar</button>
+                    <button onClick={saveCaption} className="bg-pink-500 text-white px-4 py-1 rounded-lg w-full">Salvar</button>
                   </>
                 ) : (
                   <div className="flex gap-2 items-center">
@@ -226,8 +226,8 @@ export default function Gallery() {
 
               {/* AÇÕES */}
               <div className="flex gap-2">
-                <label className="bg-white p-3 rounded-xl flex-1 text-center cursor-pointer">
-                  <Pencil />
+                <label className="bg-white dark:bg-slate-800 dark:text-white p-3 rounded-xl flex-1 text-center cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
+                  <Pencil className="mx-auto" />
                   <input
                     type="file"
                     accept="image/*"
@@ -241,16 +241,16 @@ export default function Gallery() {
                     setEditingCaption(true);
                     setCaption(selectedPhoto.caption);
                   }}
-                  className="bg-yellow-400 p-3 rounded-xl flex-1"
+                  className="bg-yellow-400 dark:bg-yellow-600 dark:text-white p-3 rounded-xl flex-1 hover:opacity-90 transition-opacity"
                 >
                   Texto
                 </button>
 
                 <button
                   onClick={() => handleDelete(selectedPhoto.id)}
-                  className="bg-red-500 text-white p-3 rounded-xl flex-1"
+                  className="bg-red-500 text-white p-3 rounded-xl flex-1 hover:bg-red-600 transition-colors"
                 >
-                  <Trash2 />
+                  <Trash2 className="mx-auto" />
                 </button>
               </div>
 
