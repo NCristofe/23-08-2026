@@ -17,6 +17,14 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Inicializa o tema salvo antes de mostrar a tela
+    const savedTheme = localStorage.getItem("theme") || "light";
+    if (savedTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+
     if (isAuthenticated()) {
       navigate("/app", { replace: true });
     }
@@ -42,7 +50,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full max-w-md mx-auto bg-gradient-to-br from-pink-50 via-rose-50 to-red-50 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen w-full max-w-md mx-auto bg-gradient-to-br from-pink-50 via-rose-50 to-red-50 dark:from-slate-900 dark:via-slate-950 dark:to-black flex flex-col items-center justify-center p-6 relative overflow-hidden transition-colors duration-500">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 0.15, y: 0 }}
@@ -74,7 +82,7 @@ export default function Login() {
           <Heart className="w-20 h-20 text-primary fill-current mx-auto" />
         </motion.div>
         <h1 className="font-romantic text-6xl text-primary mb-2">Nosso Amor</h1>
-        <p className="text-slate-600">em tempo real</p>
+        <p className="text-slate-600 dark:text-slate-400">em tempo real</p>
       </motion.div>
 
       <motion.form
@@ -84,7 +92,7 @@ export default function Login() {
         transition={{ delay: 0.3, duration: 0.6 }}
         className="w-full"
       >
-        <p className="text-center text-slate-700 mb-6 font-medium">Entrar como:</p>
+        <p className="text-center text-slate-700 dark:text-slate-300 mb-6 font-medium">Entrar como:</p>
         <div className="flex gap-4 mb-8">
           {users.map((user, index) => (
             <motion.button
@@ -94,23 +102,23 @@ export default function Login() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 + index * 0.1, duration: 0.5 }}
               onClick={() => setSelectedUser(user.id)}
-              className={`flex-1 ${user.color} rounded-3xl p-6 transition-all duration-300 ${
+              className={`flex-1 ${user.color} dark:bg-slate-800 rounded-3xl p-6 transition-all duration-300 ${
                 selectedUser === user.id
                   ? "ring-4 ring-primary shadow-lg scale-105"
                   : "shadow-md hover:scale-102"
               }`}
             >
               <div className="text-5xl mb-3">{user.emoji}</div>
-              <p className="text-slate-900 font-bold">{user.name}</p>
+              <p className="text-slate-900 dark:text-slate-100 font-bold">{user.name}</p>
             </motion.button>
           ))}
         </div>
 
-        <label className="block text-slate-700 font-medium mb-3" htmlFor="password">
+        <label className="block text-slate-700 dark:text-slate-300 font-medium mb-3" htmlFor="password">
           Insira a senha
         </label>
         <div className="relative mb-3">
-          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500" />
           <input
             id="password"
             type={showPassword ? "text" : "password"}
@@ -120,7 +128,7 @@ export default function Login() {
               setError("");
             }}
             placeholder="Digite a senha"
-            className="w-full rounded-full bg-white border border-slate-200 py-4 pl-12 pr-14 text-slate-900 shadow-sm outline-none transition focus:border-pink-400 focus:ring-4 focus:ring-pink-400/10"
+            className="w-full rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 py-4 pl-12 pr-14 text-slate-900 dark:text-slate-100 shadow-sm outline-none transition focus:border-pink-400 focus:ring-4 focus:ring-pink-400/10"
             autoComplete="current-password"
           />
           <button
