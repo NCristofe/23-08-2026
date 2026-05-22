@@ -93,14 +93,14 @@ export default function Layout() {
 
   if (!hasFirebaseConfig) {
     return (
-      <div className="min-h-screen w-full max-w-md mx-auto bg-background flex items-center justify-center p-6">
+      <div className="min-h-screen w-full max-w-md mx-auto bg-slate-50 flex items-center justify-center p-6">
         <div className="bg-white rounded-3xl shadow-lg p-6 text-center">
           <Heart className="w-12 h-12 text-primary fill-current mx-auto mb-4" />
           <h1 className="text-2xl text-primary mb-3">Firebase não configurado</h1>
           <p className="text-sm text-muted-foreground mb-4">
             Preencha o arquivo .env.local com as chaves do seu projeto Firebase e reinicie o servidor.
           </p>
-          <div className="rounded-2xl bg-secondary p-3 text-left text-xs text-muted-foreground">
+          <div className="rounded-2xl bg-slate-100 p-3 text-left text-xs text-slate-500">
             {missingFirebaseConfig.map((key) => (
               <p key={key}>{key}</p>
             ))}
@@ -108,7 +108,7 @@ export default function Layout() {
           <button
             type="button"
             onClick={handleLogout}
-            className="mt-5 w-full rounded-full bg-primary px-4 py-3 text-primary-foreground"
+            className="mt-5 w-full rounded-full bg-primary px-4 py-3 text-white"
           >
             Voltar para login
           </button>
@@ -125,7 +125,7 @@ export default function Layout() {
   ];
 
   return (
-    <div className="h-screen w-full max-w-md mx-auto bg-background dark:bg-slate-950 text-foreground dark:text-slate-100 flex flex-col relative overflow-hidden transition-colors duration-300">
+    <div className="h-screen w-full max-w-md mx-auto bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col relative overflow-hidden transition-colors duration-300">
       {/* Floating hearts decoration */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-10 left-8 text-primary/10 dark:text-primary/20 animate-float">
@@ -153,7 +153,7 @@ export default function Layout() {
       </div>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-t border-border dark:border-slate-800">
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800">
         <div className="flex items-center justify-around px-4 py-3">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -164,7 +164,7 @@ export default function Layout() {
                 key={item.path}
                 onClick={() => navigate(item.path)}
                 className={`flex flex-col items-center gap-1 transition-all duration-300 ${
-                  isActive ? "text-primary scale-110" : "text-muted-foreground dark:text-slate-400"
+                  isActive ? "text-primary scale-110" : "text-slate-500 dark:text-slate-400"
                 }`}
               >
                 <Icon className={`w-6 h-6 ${isActive ? "fill-current" : ""}`} />
@@ -176,7 +176,7 @@ export default function Layout() {
             type="button"
             onClick={handleLogout}
             aria-label="Sair"
-            className="flex flex-col items-center gap-1 text-muted-foreground dark:text-slate-400 transition-all duration-300 hover:text-primary"
+            className="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400 transition-all duration-300 hover:text-primary"
           >
             <LogOut className="w-6 h-6" />
             <span className="text-xs">Sair</span>
