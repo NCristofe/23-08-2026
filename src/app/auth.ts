@@ -5,7 +5,8 @@ const AUTH_KEY = "appAuthenticated";
 const PASSWORD = import.meta.env.VITE_APP_PASSWORD?.trim() || "NossoAmor@2308";
 
 export function isAuthenticated() {
-  return localStorage.getItem(AUTH_KEY) === "true";
+  localStorage.removeItem(AUTH_KEY);
+  return sessionStorage.getItem(AUTH_KEY) === "true";
 }
 
 export function validatePassword(password: string) {
@@ -13,9 +14,11 @@ export function validatePassword(password: string) {
 }
 
 export function saveAuthentication() {
-  localStorage.setItem(AUTH_KEY, "true");
+  localStorage.removeItem(AUTH_KEY);
+  sessionStorage.setItem(AUTH_KEY, "true");
 }
 
 export function clearAuthentication() {
   localStorage.removeItem(AUTH_KEY);
+  sessionStorage.removeItem(AUTH_KEY);
 }
