@@ -74,7 +74,7 @@ export default function Login() {
           <Heart className="w-20 h-20 text-primary fill-current mx-auto" />
         </motion.div>
         <h1 className="font-romantic text-6xl text-primary mb-2">Nosso Amor</h1>
-        <p className="text-foreground/70">em tempo real</p>
+        <p className="text-slate-600">em tempo real</p>
       </motion.div>
 
       <motion.form
@@ -84,7 +84,7 @@ export default function Login() {
         transition={{ delay: 0.3, duration: 0.6 }}
         className="w-full"
       >
-        <p className="text-center text-foreground/80 mb-6">Entrar como:</p>
+        <p className="text-center text-slate-700 mb-6 font-medium">Entrar como:</p>
         <div className="flex gap-4 mb-8">
           {users.map((user, index) => (
             <motion.button
@@ -101,16 +101,16 @@ export default function Login() {
               }`}
             >
               <div className="text-5xl mb-3">{user.emoji}</div>
-              <p className="text-foreground">{user.name}</p>
+              <p className="text-slate-900 font-bold">{user.name}</p>
             </motion.button>
           ))}
         </div>
 
-        <label className="block text-foreground/80 mb-3" htmlFor="password">
+        <label className="block text-slate-700 font-medium mb-3" htmlFor="password">
           Insira a senha
         </label>
         <div className="relative mb-3">
-          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           <input
             id="password"
             type={showPassword ? "text" : "password"}
@@ -120,13 +120,13 @@ export default function Login() {
               setError("");
             }}
             placeholder="Digite a senha"
-            className="w-full rounded-full bg-white/80 border border-border py-4 pl-12 pr-14 text-foreground shadow-sm outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/15"
+            className="w-full rounded-full bg-white border border-slate-200 py-4 pl-12 pr-14 text-slate-900 shadow-sm outline-none transition focus:border-pink-400 focus:ring-4 focus:ring-pink-400/10"
             autoComplete="current-password"
           />
           <button
             type="button"
             onClick={() => setShowPassword((value) => !value)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground transition hover:text-primary"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-pink-500"
             aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
           >
             {showPassword ? (
@@ -138,7 +138,7 @@ export default function Login() {
         </div>
 
         {error && (
-          <p className="mb-5 text-center text-sm text-destructive" role="alert">
+          <p className="mb-5 text-center text-sm text-red-500 font-medium" role="alert">
             {error}
           </p>
         )}
@@ -149,7 +149,7 @@ export default function Login() {
           transition={{ delay: 0.6 }}
           type="submit"
           disabled={!selectedUser || !password}
-          className={`w-full bg-primary text-primary-foreground rounded-full py-4 px-6 flex items-center justify-center gap-2 transition-all duration-300 ${
+          className={`w-full bg-pink-500 text-white rounded-full py-4 px-6 flex items-center justify-center gap-2 transition-all duration-300 ${
             selectedUser && password
               ? "opacity-100 hover:bg-primary/90 hover:scale-105 shadow-lg"
               : "opacity-50 cursor-not-allowed"
