@@ -3,7 +3,7 @@ import { Navigate, Outlet, useLocation, useNavigate } from "react-router";
 import { Heart, MessageCircle, Clock, Sparkles, LogOut, Moon, Sun } from "lucide-react";
 import { clearAuthentication, isAuthenticated } from "../auth";
 import { db, ensureAuth, hasFirebaseConfig, missingFirebaseConfig } from "../../Firebase";
-import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy, limit, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import toast from "react-hot-toast";
 
 export default function Layout() {
@@ -29,6 +29,26 @@ export default function Layout() {
     if (isAuthenticated() && hasFirebaseConfig) {
       ensureAuth().catch(console.error);
     }
+  }, []);
+
+  // Atualiza o status de presença (Online)
+  useEffect(() => {
+    if (!isAuthenticated() || !db) return;
+    const currentUser = localStorage.getItem("currentUser");
+    if (!currentUser) return;
+
+    const userStatusRef = doc(db, "users_status", currentUser);
+    
+    const updatePresence = async () => {
+      await setDoc(userStatusRef, {
+        lastSeen: serverTimestamp(),
+      }, { merge: true });
+    };
+
+    updatePresence();
+    const interval = setInterval(updatePresence, 30000); // Atualiza a cada 30s
+
+    return () => clearInterval(interval);
   }, []);
 
   // Listeners para notificações globais
