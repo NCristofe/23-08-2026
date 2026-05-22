@@ -128,13 +128,13 @@ export default function Layout() {
     <div className="h-screen w-full max-w-md mx-auto bg-background dark:bg-slate-950 text-foreground dark:text-slate-100 flex flex-col relative overflow-hidden transition-colors duration-300">
       {/* Floating hearts decoration */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-10 left-8 text-primary/10 animate-float">
+        <div className="absolute top-10 left-8 text-primary/10 dark:text-primary/20 animate-float">
           <Heart className="w-12 h-12 fill-current" />
         </div>
-        <div className="absolute top-32 right-12 text-primary/10 animate-float-delayed">
+        <div className="absolute top-32 right-12 text-primary/10 dark:text-primary/20 animate-float-delayed">
           <Heart className="w-8 h-8 fill-current" />
         </div>
-        <div className="absolute bottom-48 left-16 text-primary/10 animate-float">
+        <div className="absolute bottom-48 left-16 text-primary/10 dark:text-primary/20 animate-float">
           <Heart className="w-10 h-10 fill-current" />
         </div>
       </div>
