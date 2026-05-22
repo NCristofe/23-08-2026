@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router";
-import { Heart, MessageCircle, Image, Clock, Sparkles, LogOut } from "lucide-react";
+import { Heart, MessageCircle, Clock, Sparkles, LogOut } from "lucide-react";
 import { clearAuthentication, isAuthenticated } from "../auth";
 import { db, ensureAuth, hasFirebaseConfig, missingFirebaseConfig } from "../../Firebase";
 import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
@@ -25,7 +25,6 @@ export default function Layout() {
     
     // Refs para ignorar a carga inicial de dados (não disparar toast para o passado)
     let isFirstMsgs = true;
-    let isFirstPhotos = true;
     let isFirstMilestones = true;
 
     // Ouvir novas Mensagens
@@ -40,23 +39,6 @@ export default function Layout() {
           const data = change.doc.data();
           if (data.sender !== currentUser) {
             toast(`Nova mensagem: "${data.text.substring(0, 30)}..."`, { icon: "💬" });
-          }
-        }
-      });
-    });
-
-    // Ouvir novas Fotos
-    const qPhotos = query(collection(db, "photos"), orderBy("createdAt", "desc"), limit(1));
-    const unsubPhotos = onSnapshot(qPhotos, (snapshot) => {
-      if (isFirstPhotos) {
-        isFirstPhotos = false;
-        return;
-      }
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === "added") {
-          const data = change.doc.data();
-          if (data.createdBy !== currentUser) {
-            toast.success("Nova foto adicionada na galeria! ❤️", { icon: "📸" });
           }
         }
       });
@@ -81,7 +63,6 @@ export default function Layout() {
 
     return () => {
       unsubMessages();
-      unsubPhotos();
       unsubMilestones();
     };
   }, []);
@@ -125,7 +106,6 @@ export default function Layout() {
   const navItems = [
     { path: "/app", icon: Heart, label: "Amor" },
     { path: "/app/messages", icon: MessageCircle, label: "Chat" },
-    { path: "/app/gallery", icon: Image, label: "Fotos" },
     { path: "/app/timeline", icon: Clock, label: "Marcos" },
     { path: "/app/extras", icon: Sparkles, label: "Extras" },
   ];
