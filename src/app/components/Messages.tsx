@@ -104,15 +104,15 @@ export default function Messages() {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white border-b border-border p-4"
+        className="bg-white dark:bg-slate-900 border-b border-border dark:border-slate-800 p-4 transition-colors"
       >
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-gradient-to-br from-primary to-pink-400 rounded-full flex items-center justify-center">
             <Heart className="w-6 h-6 text-white fill-current" />
           </div>
           <div>
-            <h2 className="text-foreground">Nosso Chat</h2>
-            <p className="text-xs text-muted-foreground">
+            <h2 className="text-foreground dark:text-slate-100">Nosso Chat</h2>
+            <p className="text-xs text-muted-foreground dark:text-slate-400">
               Olá, {currentUser} 💕
             </p>
           </div>
@@ -134,7 +134,7 @@ export default function Messages() {
                 className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
               >
                 {/* Nome do remetente */}
-                <p className="text-xs text-muted-foreground mb-1 px-2">
+                <p className="text-xs text-muted-foreground dark:text-slate-400 mb-1 px-2">
                   {isMe ? "Você" : message.sender}
                 </p>
 
@@ -142,7 +142,7 @@ export default function Messages() {
                   className={`max-w-[75%] rounded-3xl p-4 ${
                     isMe
                       ? "bg-primary text-white rounded-tr-sm"
-                      : "bg-white text-foreground rounded-tl-sm shadow-md"
+                      : "bg-white dark:bg-slate-800 text-foreground dark:text-slate-100 rounded-tl-sm shadow-md"
                   }`}
                 >
                   <p className="text-sm mb-1">{message.text}</p>
@@ -157,13 +157,13 @@ export default function Messages() {
       </div>
 
       {/* QUICK MESSAGES */}
-      <div className="px-4 py-2 bg-white/50 border-t">
+      <div className="px-4 py-2 bg-white/50 dark:bg-slate-900/50 border-t dark:border-slate-800 backdrop-blur-sm">
         <div className="flex gap-2 overflow-x-auto pb-2">
           {quickMessages.map((msg, i) => (
             <button
               key={i}
               onClick={() => handleQuickMessage(msg)}
-              className="bg-secondary px-4 py-2 rounded-full text-sm whitespace-nowrap"
+              className="bg-secondary dark:bg-slate-800 dark:text-slate-200 px-4 py-2 rounded-full text-sm whitespace-nowrap"
             >
               {msg}
             </button>
@@ -172,14 +172,14 @@ export default function Messages() {
       </div>
 
       {/* INPUT */}
-      <div className="p-4 bg-white border-t">
+      <div className="p-4 bg-white dark:bg-slate-900 border-t dark:border-slate-800 transition-colors">
         <div className="flex gap-2">
           <input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             placeholder="Digite sua mensagem..."
-            className="flex-1 px-4 py-3 rounded-full bg-gray-100 outline-none"
+            className="flex-1 px-4 py-3 rounded-full bg-gray-100 dark:bg-slate-800 dark:text-white outline-none"
           />
           <button
             onClick={handleSend}
