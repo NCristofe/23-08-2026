@@ -10,6 +10,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  doc,
 } from "firebase/firestore";
 
 interface Message {
@@ -26,17 +27,35 @@ const quickMessages = [
   "Você é especial 💕",
 ];
 
+// Define users here for easy access
+const allUsers = [
+  { id: 1, name: "Geovanna", emoji: "👩🏻" },
+  { id: 2, name: "Natanael", emoji: "👨🏻" },
+];
+
 export default function Messages() {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [partnerStatus, setPartnerStatus] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const currentUser = localStorage.getItem("currentUser");
+  // Determine the other user
+  const otherUser = allUsers.find(user => user.name !== currentUser);
 
   useEffect(() => {
     if (!currentUser) navigate("/");
   }, [currentUser, navigate]);
+
+  // Ouvir status do parceiro
+  useEffect(() => {
+    if (!db || !otherUser) return;
+    const unsub = onSnapshot(doc(db, "users_status", otherUser.name), (doc) => {
+      if (doc.exists()) setPartnerStatus(doc.data());
+    });
+    return () => unsub();
+  }, [otherUser]);
 
   useEffect(() => {
     if (!db) return;
@@ -98,6 +117,19 @@ export default function Messages() {
     }
   };
 
+  const getStatusDisplay = () => {
+    if (!partnerStatus?.lastSeen) return "Offline";
+    
+    const lastSeenDate = partnerStatus.lastSeen.toDate();
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - lastSeenDate.getTime()) / 1000);
+
+    // Se a última atualização foi há menos de 70 segundos, consideramos Online
+    if (diffInSeconds < 70) return "Online 💕";
+    
+    return `Visto por último: ${format(lastSeenDate, "HH:mm")}`;
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] bg-slate-50 dark:bg-slate-950 transition-colors">
       {/* HEADER */}
@@ -109,12 +141,16 @@ export default function Messages() {
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-gradient-to-br from-primary to-pink-400 rounded-full flex items-center justify-center">
             <Heart className="w-6 h-6 text-white fill-current" />
+            {/* Display other user's emoji or a default heart */}
+            {otherUser?.emoji ? (
+              <span className="text-2xl">{otherUser.emoji}</span>
+            ) : (
+              <Heart className="w-6 h-6 text-white fill-current" />
+            )}
           </div>
           <div>
-            <h2 className="text-slate-900 dark:text-slate-100 font-bold">Nosso Chat</h2>
-            <p className="text-xs text-slate-600 dark:text-slate-400">
-              Olá, {currentUser} 💕
-            </p>
+            <h2 className="text-slate-900 dark:text-slate-100 font-bold">{otherUser?.name || "Parceiro"}</h2>
+            <p className="text-xs text-slate-600 dark:text-slate-400">{getStatusDisplay()}</p>
           </div>
         </div>
       </motion.div>
@@ -146,7 +182,7 @@ export default function Messages() {
                   }`}
                 >
                   <p className="text-sm mb-1 leading-relaxed">{message.text}</p>
-                  <p className="text-[10px] opacity-70 text-right">{message.time}</p>
+                  <p className={`text-[10px] opacity-70 text-right ${isMe ? "text-white" : "text-slate-600 dark:text-slate-300"}`}>{message.time}</p>
                 </div>
               </motion.div>
             );
