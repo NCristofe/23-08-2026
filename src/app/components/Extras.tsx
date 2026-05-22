@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Heart, Gift, Star } from "lucide-react";
+import { Sparkles, Heart, Gift, Star, Plus, X } from "lucide-react";
+import { db } from "../../Firebase";
+import { collection, addDoc, onSnapshot, query, orderBy } from "firebase/firestore";
 
-const quizQuestions = [
+const defaultQuestions = [
   {
     question: "Qual foi o lugar do nosso primeiro encontro?",
     options: ["Café Central", "Parque da Cidade", "Cinema", "Restaurante Italiano"],
@@ -30,19 +32,57 @@ const surprises = [
 ];
 
 export default function Extras() {
+  const [questions, setQuestions] = useState<any[]>(defaultQuestions);
   const [quizActive, setQuizActive] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [surprise, setSurprise] = useState<string | null>(null);
   const [hearts, setHearts] = useState<{ id: number; x: number }[]>([]);
 
+  // Estado do formulário para nova pergunta
+  const [newQuestion, setNewQuestion] = useState("");
+  const [newOptions, setNewOptions] = useState(["", "", "", ""]);
+  const [correctOption, setCorrectOption] = useState(0);
+
+  useEffect(() => {
+    if (!db) return;
+    const q = query(collection(db, "quiz"), orderBy("createdAt", "asc"));
+    const unsub = onSnapshot(q, (snap) => {
+      const dbQuestions = snap.docs.map(doc => doc.data());
+      if (dbQuestions.length > 0) {
+        setQuestions([...defaultQuestions, ...dbQuestions]);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const handleAddQuestion = async () => {
+    if (!newQuestion.trim() || newOptions.some(o => !o.trim()) || !db) return;
+    
+    try {
+      await addDoc(collection(db, "quiz"), {
+        question: newQuestion,
+        options: newOptions,
+        correct: correctOption,
+        createdAt: new Date().toISOString(),
+      });
+      setNewQuestion("");
+      setNewOptions(["", "", "", ""]);
+      setCorrectOption(0);
+      setShowAddForm(false);
+    } catch (err) {
+      console.error("Erro ao adicionar pergunta:", err);
+    }
+  };
+
   const handleAnswer = (index: number) => {
-    if (index === quizQuestions[currentQuestion].correct) {
+    if (index === questions[currentQuestion].correct) {
       setScore(score + 1);
     }
 
-    if (currentQuestion < quizQuestions.length - 1) {
+    if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     } else {
       setShowResult(true);
@@ -96,6 +136,17 @@ export default function Extras() {
           <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            onClick={() => setShowAddForm(true)}
+            className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-3xl p-4 shadow-md border border-slate-200 dark:border-slate-800 flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            <Plus size={20} className="text-primary" />
+            <span className="font-bold">Adicionar Pergunta ao Quiz</span>
+          </motion.button>
+
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             onClick={() => setQuizActive(true)}
             className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
@@ -141,15 +192,15 @@ export default function Extras() {
         >
           <div className="text-center mb-6">
             <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">
-              Pergunta {currentQuestion + 1} de {quizQuestions.length}
+              Pergunta {currentQuestion + 1} de {questions.length}
             </div>
             <h3 className="text-slate-900 dark:text-slate-100">
-              {quizQuestions[currentQuestion].question}
+              {questions[currentQuestion].question}
             </h3>
           </div>
 
           <div className="space-y-3">
-            {quizQuestions[currentQuestion].options.map((option, index) => (
+            {questions[currentQuestion].options.map((option, index) => (
               <motion.button
                 key={index}
                 initial={{ opacity: 0, x: -20 }}
@@ -174,12 +225,12 @@ export default function Extras() {
             Resultado!
           </h2>
           <p className="text-3xl mb-6 dark:text-slate-100">
-            {score} de {quizQuestions.length}
+            {score} de {questions.length}
           </p>
           <p className="text-slate-800/80 dark:text-slate-300 mb-6">
-            {score === quizQuestions.length
+            {score === questions.length
               ? "Perfeito! Você me conhece muito bem! 💕"
-              : score >= quizQuestions.length / 2
+              : score >= questions.length / 2
               ? "Muito bem! Nosso amor é forte! ❤️"
               : "Vamos criar mais memórias juntos! 🥰"}
           </p>
@@ -191,6 +242,63 @@ export default function Extras() {
           </button>
         </motion.div>
       )}
+
+      {/* Modal de Adicionar Pergunta */}
+      <AnimatePresence>
+        {showAddForm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-md shadow-xl"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Nova Pergunta</h3>
+                <button onClick={() => setShowAddForm(false)}><X size={24} className="text-slate-500" /></button>
+              </div>
+              <input
+                value={newQuestion}
+                onChange={e => setNewQuestion(e.target.value)}
+                placeholder="Escreva a pergunta..."
+                className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 dark:bg-slate-800 dark:text-white mb-4 outline-none focus:ring-2 focus:ring-primary/50"
+              />
+              <div className="space-y-2 mb-6">
+                {newOptions.map((opt, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <input
+                      type="radio"
+                      checked={correctOption === i}
+                      onChange={() => setCorrectOption(i)}
+                      className="accent-primary w-4 h-4"
+                    />
+                    <input
+                      value={opt}
+                      onChange={e => {
+                        const opts = [...newOptions];
+                        opts[i] = e.target.value;
+                        setNewOptions(opts);
+                      }}
+                      placeholder={`Opção ${i + 1}`}
+                      className="flex-1 p-2 rounded-lg border border-slate-200 dark:border-slate-800 dark:bg-slate-800 dark:text-white outline-none text-sm"
+                    />
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={handleAddQuestion}
+                className="w-full bg-primary dark:bg-pink-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-primary/20 dark:shadow-pink-900/30 active:scale-95 transition-transform"
+              >
+                Salvar Pergunta ❤️
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Surprise modal */}
       <AnimatePresence>
