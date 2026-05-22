@@ -128,7 +128,7 @@ export default function Extras() {
             className="bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-950/20 dark:to-purple-950/20 rounded-3xl p-8 text-center border border-transparent dark:border-pink-900/20"
           >
             <Sparkles className="w-12 h-12 text-primary mx-auto mb-3" />
-            <p className="text-foreground/80 dark:text-slate-300 font-romantic text-xl">
+            <p className="text-slate-800/80 dark:text-slate-300 font-romantic text-xl">
               Obrigado por fazer parte da minha vida 💕
             </p>
           </motion.div>
@@ -143,7 +143,7 @@ export default function Extras() {
             <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">
               Pergunta {currentQuestion + 1} de {quizQuestions.length}
             </div>
-            <h3 className="text-foreground dark:text-slate-100">
+            <h3 className="text-slate-900 dark:text-slate-100">
               {quizQuestions[currentQuestion].question}
             </h3>
           </div>
@@ -176,7 +176,7 @@ export default function Extras() {
           <p className="text-3xl mb-6 dark:text-slate-100">
             {score} de {quizQuestions.length}
           </p>
-          <p className="text-foreground/80 dark:text-slate-300 mb-6">
+          <p className="text-slate-800/80 dark:text-slate-300 mb-6">
             {score === quizQuestions.length
               ? "Perfeito! Você me conhece muito bem! 💕"
               : score >= quizQuestions.length / 2
@@ -213,7 +213,7 @@ export default function Extras() {
               >
                 <Sparkles className="w-16 h-16 text-primary mx-auto mb-4" />
               </motion.div>
-              <p className="text-foreground dark:text-slate-100 font-romantic text-2xl">
+              <p className="text-slate-900 dark:text-slate-100 font-romantic text-2xl">
                 {surprise}
               </p>
             </motion.div>
