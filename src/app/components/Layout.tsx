@@ -72,7 +72,7 @@ export default function Layout() {
         if (change.type === "added") {
           const data = change.doc.data();
           if (data.sender !== currentUser) {
-            toast(`Nova mensagem: "${data.text.substring(0, 30)}..."`, { icon: "💬" });
+            toast(`Nova mensagem: "${data.text?.substring(0, 30) || ""}..."`, { icon: "💬" });
           }
         }
       });
