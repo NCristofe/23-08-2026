@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Trash2, Pencil } from "lucide-react";
 
-import { db, ensureAuth } from "../../Firebase";
+import { db } from "../../Firebase";
 import {
   collection,
   addDoc,
@@ -27,6 +27,24 @@ type Milestone = {
   history?: any[];
 };
 
+function getFirebaseErrorMessage(error: unknown) {
+  const firebaseError = error as { code?: string; message?: string };
+
+  if (firebaseError.code === "auth/operation-not-allowed") {
+    return "O Firebase bloqueou a autenticação. Confira se as regras do Firestore permitem o acesso usado pelo app.";
+  }
+
+  if (firebaseError.code === "permission-denied") {
+    return "Permissão negada no Firestore. Ajuste as regras do banco para permitir leitura e escrita em milestones.";
+  }
+
+  if (firebaseError.code === "failed-precondition") {
+    return "O Firestore ainda não está pronto ou precisa de um índice/configuração no Firebase.";
+  }
+
+  return `Não foi possível salvar. ${firebaseError.code || firebaseError.message || "Veja o console para mais detalhes."}`;
+}
+
 export default function Timeline() {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -35,6 +53,8 @@ export default function Timeline() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
+  const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   const currentUser = localStorage.getItem("currentUser") ?? "Anônimo";
 
@@ -45,10 +65,9 @@ export default function Timeline() {
   // 🔥 carregar dados em tempo real
   useEffect(() => {
     let unsub: () => void;
+    let isMounted = true;
 
     const init = async () => {
-      await ensureAuth();
-
       const q = query(
         collection(db, "milestones"),
         orderBy("createdAt", "desc")
@@ -61,44 +80,71 @@ export default function Timeline() {
             ...doc.data(),
           })) as Milestone[]
         );
+      }, (err) => {
+        console.error("Erro ao carregar marcos:", err);
+        if (isMounted) {
+          setError(getFirebaseErrorMessage(err));
+        }
       });
     };
 
     init();
 
-    return () => unsub?.();
+    return () => {
+      isMounted = false;
+      unsub?.();
+    };
   }, []);
 
   // ➕ ou ✏️ salvar
   async function handleSave() {
-    if (!title || !date || !db) return;
+    setError("");
+
+    if (!title.trim() || !date) {
+      setError("Preencha o título e a data para salvar.");
+      return;
+    }
+
+    if (!db) {
+      setError("Firebase não configurado.");
+      return;
+    }
 
     const now = new Date().toISOString();
 
-    if (editingId) {
-      await updateDoc(doc(db, "milestones", editingId), {
-        title,
-        description,
-        date,
-        updatedAt: now,
-        updatedBy: getUserName(),
-      });
-    } else {
-      await addDoc(collection(db, "milestones"), {
-        title,
-        description,
-        date,
+    try {
+      setIsSaving(true);
 
-        createdAt: now,
-        updatedAt: now,
-        createdBy: getUserName(),
-        updatedBy: getUserName(),
+      if (editingId) {
+        await updateDoc(doc(db, "milestones", editingId), {
+          title: title.trim(),
+          description: description.trim(),
+          date,
+          updatedAt: now,
+          updatedBy: getUserName(),
+        });
+      } else {
+        await addDoc(collection(db, "milestones"), {
+          title: title.trim(),
+          description: description.trim(),
+          date,
 
-        history: [],
-      });
+          createdAt: now,
+          updatedAt: now,
+          createdBy: getUserName(),
+          updatedBy: getUserName(),
+
+          history: [],
+        });
+      }
+
+      resetForm();
+    } catch (err) {
+      console.error("Erro ao salvar marco:", err);
+      setError(getFirebaseErrorMessage(err));
+    } finally {
+      setIsSaving(false);
     }
-
-    resetForm();
   }
 
   // ❌ deletar
@@ -120,6 +166,7 @@ export default function Timeline() {
     setTitle("");
     setDescription("");
     setDate("");
+    setError("");
     setEditingId(null);
     setShowForm(false);
   }
@@ -164,19 +211,28 @@ export default function Timeline() {
 
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={handleSave}
-              className="w-full bg-green-500 text-white py-2 rounded"
+              disabled={isSaving}
+              className="w-full bg-green-500 text-white py-2 rounded disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {editingId ? "Salvar edição" : "Salvar ❤️"}
+              {isSaving ? "Salvando..." : editingId ? "Salvar edição" : "Salvar ❤️"}
             </button>
 
             <button
+              type="button"
               onClick={resetForm}
               className="w-full bg-gray-300 py-2 rounded"
             >
               Cancelar
             </button>
           </div>
+
+          {error && (
+            <p className="mt-3 text-center text-sm font-medium text-red-500">
+              {error}
+            </p>
+          )}
         </div>
       )}
 
