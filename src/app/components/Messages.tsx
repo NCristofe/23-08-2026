@@ -20,6 +20,16 @@ interface Message {
   time: string;
 }
 
+function getFirebaseErrorMessage(error: unknown) {
+  const firebaseError = error as { code?: string; message?: string };
+
+  if (firebaseError.code === "permission-denied") {
+    return "Permissão negada no Firestore. Publique as regras liberando leitura e escrita em messages.";
+  }
+
+  return `Não foi possível enviar. ${firebaseError.code || firebaseError.message || "Veja o console para mais detalhes."}`;
+}
+
 const quickMessages = [
   "Te amo ❤️",
   "Saudades de você 🥰",
@@ -38,6 +48,7 @@ export default function Messages() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [partnerStatus, setPartnerStatus] = useState<any>(null);
+  const [error, setError] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const currentUser = localStorage.getItem("currentUser");
@@ -53,6 +64,8 @@ export default function Messages() {
     if (!db || !otherUser) return;
     const unsub = onSnapshot(doc(db, "users_status", otherUser.name), (doc) => {
       if (doc.exists()) setPartnerStatus(doc.data());
+    }, (error) => {
+      console.error("Erro ao carregar status:", error);
     });
     return () => unsub();
   }, [otherUser]);
@@ -63,6 +76,7 @@ export default function Messages() {
     const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      setError("");
       const msgs: Message[] = snapshot.docs.map((doc) => {
         const data = doc.data();
         return {
@@ -73,6 +87,9 @@ export default function Messages() {
         };
       });
       setMessages(msgs);
+    }, (error) => {
+      console.error("Erro ao carregar mensagens:", error);
+      setError(getFirebaseErrorMessage(error));
     });
 
     return () => unsubscribe();
@@ -86,6 +103,7 @@ export default function Messages() {
     if (!newMessage.trim() || !db) return;
 
     try {
+      setError("");
       await addDoc(collection(db, "messages"), {
         text: newMessage,
         sender: currentUser ?? "Anônimo",
@@ -96,6 +114,7 @@ export default function Messages() {
       setNewMessage("");
     } catch (error) {
       console.error("Erro ao enviar:", error);
+      setError(getFirebaseErrorMessage(error));
     }
   };
 
@@ -103,6 +122,7 @@ export default function Messages() {
     if (!db) return;
 
     try {
+      setError("");
       const now = new Date();
       const time = `${now.getHours()}:${now.getMinutes().toString().padStart(2, "0")}`;
 
@@ -113,7 +133,8 @@ export default function Messages() {
         createdAt: new Date(),
       });
     } catch (error) {
-      console.error(error);
+      console.error("Erro ao enviar mensagem rápida:", error);
+      setError(getFirebaseErrorMessage(error));
     }
   };
 
@@ -157,6 +178,12 @@ export default function Messages() {
 
       {/* MENSAGENS */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-950">
+        {error && (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
+            {error}
+          </div>
+        )}
+
         <AnimatePresence>
           {messages.map((message, index) => {
             const isMe = currentUser !== null && message.sender === currentUser;
