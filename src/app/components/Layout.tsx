@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import { Navigate, Outlet, useLocation, useNavigate } from "react-router";
+import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Heart, MessageCircle, Clock, Gamepad2, LogOut, Moon, Sun } from "lucide-react";
 import { clearAuthentication, isAuthenticated } from "../auth";
 import { db, hasFirebaseConfig, missingFirebaseConfig } from "../../Firebase";
-import { collection, onSnapshot, query, orderBy, limit, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { 
+  collection, onSnapshot, query, orderBy, limit, doc, 
+  setDoc, serverTimestamp, QuerySnapshot, DocumentData, DocumentChange 
+} from "firebase/firestore";
 import toast from "react-hot-toast";
 
 export default function Layout() {
@@ -56,12 +59,12 @@ export default function Layout() {
 
     // Ouvir novas Mensagens
     const qMessages = query(collection(db, "messages"), orderBy("createdAt", "desc"), limit(1));
-    const unsubMessages = onSnapshot(qMessages, (snapshot) => {
+    const unsubMessages = onSnapshot(qMessages, (snapshot: QuerySnapshot<DocumentData>) => {
       if (isFirstMsgs) {
         isFirstMsgs = false;
         return;
       }
-      snapshot.docChanges().forEach((change) => {
+      snapshot.docChanges().forEach((change: DocumentChange<DocumentData>) => {
         if (change.type === "added") {
           const data = change.doc.data();
           if (data.sender !== currentUser) {
@@ -73,12 +76,12 @@ export default function Layout() {
 
     // Ouvir novos Marcos (Timeline)
     const qMilestones = query(collection(db, "milestones"), orderBy("createdAt", "desc"), limit(1));
-    const unsubMilestones = onSnapshot(qMilestones, (snapshot) => {
+    const unsubMilestones = onSnapshot(qMilestones, (snapshot: QuerySnapshot<DocumentData>) => {
       if (isFirstMilestones) {
         isFirstMilestones = false;
         return;
       }
-      snapshot.docChanges().forEach((change) => {
+      snapshot.docChanges().forEach((change: DocumentChange<DocumentData>) => {
         if (change.type === "added") {
           const data = change.doc.data();
           if (data.createdBy !== currentUser) {
