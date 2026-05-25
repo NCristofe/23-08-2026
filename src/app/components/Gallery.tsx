@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, MouseEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Heart, Trash2, Pencil } from "lucide-react";
 import toast from "react-hot-toast";
@@ -14,6 +14,8 @@ import {
   onSnapshot,
   orderBy,
   query,
+  QuerySnapshot,
+  DocumentData
 } from "firebase/firestore";
 
 import {
@@ -52,9 +54,9 @@ export default function Gallery() {
       if (!db) return;
 
       const q = query(collection(db, "photos"), orderBy("createdAt", "desc"));
-      unsub = onSnapshot(q, (snap) => {
+      unsub = onSnapshot(q, (snap: QuerySnapshot<DocumentData>) => {
         setPhotos(
-          snap.docs.map((d) => ({
+          snap.docs.map((d: any) => ({
             id: d.id,
             ...d.data(),
           })) as Photo[]
@@ -195,7 +197,7 @@ export default function Gallery() {
             onClick={() => setSelectedPhoto(null)}
           >
             <motion.div
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: MouseEvent) => e.stopPropagation()}
               className="max-w-lg w-full relative"
             >
               <img
