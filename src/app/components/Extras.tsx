@@ -3,7 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Heart, Gift, Star, Plus, X, Gamepad2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { db } from "../../Firebase";
-import { collection, addDoc, onSnapshot, query, orderBy, doc, setDoc } from "firebase/firestore";
+import { 
+  collection, addDoc, onSnapshot, query, orderBy, doc, 
+  setDoc, updateDoc, arrayUnion, 
+  QuerySnapshot, 
+  DocumentData, 
+  DocumentSnapshot 
+} from "firebase/firestore";
 
 type QuizQuestion = {
   question: string;
@@ -118,13 +124,13 @@ export default function Extras() {
   useEffect(() => {
     if (!db) return;
     const q = query(collection(db, "quiz"), orderBy("createdAt", "asc"));
-    const unsub = onSnapshot(q, (snap) => {
+    const unsub = onSnapshot(q, (snap: QuerySnapshot<DocumentData>) => {
       const dbQuizzes = snap.docs
-        .map((doc) => ({
+        .map((doc: any) => ({
           id: doc.id,
           ...doc.data(),
         }) as QuizSet)
-        .filter((quiz) => (
+        .filter((quiz: QuizSet) => (
           quiz.createdBy &&
           quiz.createdBy !== currentUser &&
           Array.isArray(quiz.questions) &&
@@ -133,7 +139,7 @@ export default function Extras() {
 
       setAvailableQuizzes((currentQuizzes) => {
         const answeredIds = new Set(history.map((item) => item.quizId));
-        const filtered = dbQuizzes.filter((quiz) => !answeredIds.has(quiz.id));
+        const filtered = dbQuizzes.filter((quiz: QuizSet) => !answeredIds.has(quiz.id));
         return JSON.stringify(currentQuizzes) === JSON.stringify(filtered) ? currentQuizzes : filtered;
       });
     });
@@ -143,13 +149,13 @@ export default function Extras() {
   useEffect(() => {
     if (!db) return;
     const q = query(collection(db, "quiz_history"), orderBy("answeredAt", "desc"));
-    const unsub = onSnapshot(q, (snap) => {
+    const unsub = onSnapshot(q, (snap: QuerySnapshot<DocumentData>) => {
       const dbHistory = snap.docs
-        .map((doc) => ({
+        .map((doc: any) => ({
           id: doc.id,
           ...doc.data(),
         }) as QuizHistory)
-        .filter((item) => item.respondent === currentUser || item.quizOwner === currentUser);
+        .filter((item: QuizHistory) => item.respondent === currentUser || item.quizOwner === currentUser);
 
       setHistory(dbHistory);
     });
@@ -159,9 +165,9 @@ export default function Extras() {
   useEffect(() => {
     if (!db) return;
 
-    const unsub = onSnapshot(doc(db, "word_games", WORD_GAME_ID), (snap) => {
+    const unsub = onSnapshot(doc(db, "word_games", WORD_GAME_ID), (snap: DocumentSnapshot<DocumentData>) => {
       setWordGame(snap.exists() ? snap.data() as WordGame : null);
-    }, (error) => {
+    }, (error: any) => {
       console.error("Erro ao carregar jogo de palavras:", error);
       setWordGameError("Nao foi possivel carregar o jogo de palavras.");
     });
@@ -172,9 +178,9 @@ export default function Extras() {
   useEffect(() => {
     if (!db) return;
     const q = query(collection(db, "word_games_history"), orderBy("finishedAt", "desc"));
-    const unsub = onSnapshot(q, (snap) => {
+    const unsub = onSnapshot(q, (snap: QuerySnapshot<DocumentData>) => {
       const dbHistory = snap.docs
-        .map((doc) => ({
+        .map((doc: any) => ({
           id: doc.id,
           ...doc.data(),
         }) as WordGameHistory);
@@ -348,27 +354,22 @@ export default function Extras() {
     try {
       setIsSavingSecretWord(true);
       setWordGameError("");
-      await setDoc(doc(db, "word_games", WORD_GAME_ID), {
-        createdBy: wordGame?.createdBy ?? currentUser,
-        createdAt: wordGame?.createdAt ?? new Date().toISOString(),
-        players: users,
+
+      const gameRef = doc(db, "word_games", WORD_GAME_ID);
+      await setDoc(gameRef, {
+        [`words.${currentUser}`]: word,
         status: "active",
-        round: isWordRoundActive ? wordGame?.round ?? 1 : (wordGame?.round ?? 0) + 1,
-        words: {
-          ...(wordGame?.words ?? {}),
-          [currentUser]: word,
-        },
-        guesses: isWordRoundActive ? wordGame?.guesses ?? [] : [],
       }, { merge: true });
+
       setSecretWord("");
-      toast.success("Sua palavra foi salva!");
+      toast.success("Sua palavra foi salva! ❤️");
     } catch (error) {
       console.error("Erro ao salvar palavra:", error);
       const firebaseError = error as { code?: string };
       setWordGameError(
         firebaseError.code === "permission-denied"
-          ? "Permissao negada. Publique as regras do Firestore liberando word_games."
-          : "Nao foi possivel salvar sua palavra."
+          ? "Permissão negada no Firestore."
+          : "Não foi possível salvar sua palavra."
       );
     } finally {
       setIsSavingSecretWord(false);
@@ -403,13 +404,13 @@ export default function Extras() {
 
     try {
       setWordGameError("");
-      await setDoc(doc(db, "word_games", WORD_GAME_ID), {
-        guesses: [...(wordGame?.guesses ?? []), newGuess],
-      }, { merge: true });
+      await updateDoc(doc(db, "word_games", WORD_GAME_ID), {
+        guesses: arrayUnion(newGuess),
+      });
       setGuessWord("");
     } catch (error) {
       console.error("Erro ao enviar palpite:", error);
-      setWordGameError("Nao foi possivel enviar seu palpite.");
+      setWordGameError("Não foi possível enviar seu palpite.");
     }
   };
 
