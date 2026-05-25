@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router";
-import { Heart, MessageCircle, Clock, Sparkles, LogOut, Moon, Sun } from "lucide-react";
+import { Heart, MessageCircle, Clock, Gamepad2, LogOut, Moon, Sun } from "lucide-react";
 import { clearAuthentication, isAuthenticated } from "../auth";
 import { db, hasFirebaseConfig, missingFirebaseConfig } from "../../Firebase";
 import { collection, onSnapshot, query, orderBy, limit, doc, setDoc, serverTimestamp } from "firebase/firestore";
@@ -134,7 +134,7 @@ export default function Layout() {
     { path: "/app", icon: Heart, label: "Amor" },
     { path: "/app/messages", icon: MessageCircle, label: "Chat" },
     { path: "/app/timeline", icon: Clock, label: "Marcos" },
-    { path: "/app/extras", icon: Sparkles, label: "Extras" },
+    { path: "/app/extras", icon: Gamepad2, label: "Jogos" },
   ];
 
   return (
