@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  base: '/23-08-2026/', // Adicione esta linha
   plugins: [
     react(),
     tailwindcss(),
