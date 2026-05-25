@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router";
 import { Heart, MessageCircle, Clock, Sparkles, LogOut, Moon, Sun } from "lucide-react";
 import { clearAuthentication, isAuthenticated } from "../auth";
-import { db, ensureAuth, hasFirebaseConfig, missingFirebaseConfig } from "../../Firebase";
+import { db, hasFirebaseConfig, missingFirebaseConfig } from "../../Firebase";
 import { collection, onSnapshot, query, orderBy, limit, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import toast from "react-hot-toast";
 
@@ -23,13 +23,6 @@ export default function Layout() {
   const toggleTheme = () => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
   };
-
-  useEffect(() => {
-    // Garante que o Firebase esteja autenticado sempre que o layout carregar
-    if (isAuthenticated() && hasFirebaseConfig) {
-      ensureAuth().catch(console.error);
-    }
-  }, []);
 
   // Atualiza o status de presença (Online)
   useEffect(() => {
@@ -118,7 +111,7 @@ export default function Layout() {
           <Heart className="w-12 h-12 text-primary fill-current mx-auto mb-4" />
           <h1 className="text-2xl text-primary mb-3">Firebase não configurado</h1>
           <p className="text-sm text-muted-foreground mb-4">
-            Preencha o arquivo .env.local com as chaves do seu projeto Firebase e reinicie o servidor.
+            Preencha o arquivo .env.local ou .env com as chaves do seu projeto Firebase e reinicie o servidor.
           </p>
           <div className="rounded-2xl bg-slate-100 p-3 text-left text-xs text-slate-500">
             {missingFirebaseConfig.map((key) => (
