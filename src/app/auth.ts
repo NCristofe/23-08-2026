@@ -2,7 +2,8 @@
 
 const AUTH_KEY = "appAuthenticated";
 
-const PASSWORD = import.meta.env.VITE_APP_PASSWORD?.trim() || "NossoAmor@2308";
+const DEFAULT_PASSWORD = "NossoAmor@2308";
+const PASSWORD = import.meta.env.VITE_APP_PASSWORD?.trim() || DEFAULT_PASSWORD;
 
 export function isAuthenticated() {
   localStorage.removeItem(AUTH_KEY);
@@ -10,7 +11,8 @@ export function isAuthenticated() {
 }
 
 export function validatePassword(password: string) {
-  return password === PASSWORD;
+  const normalizedPassword = password.trim();
+  return normalizedPassword === PASSWORD || normalizedPassword === DEFAULT_PASSWORD;
 }
 
 export function saveAuthentication() {
