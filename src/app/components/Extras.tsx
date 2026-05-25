@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Heart, Gift, Star, Plus, X } from "lucide-react";
+import { Sparkles, Heart, Gift, Star, Plus, X, Gamepad2 } from "lucide-react";
+import toast from "react-hot-toast";
 import { db } from "../../Firebase";
-import { collection, addDoc, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, orderBy, doc, setDoc } from "firebase/firestore";
 
 type QuizQuestion = {
   question: string;
@@ -28,7 +29,43 @@ type QuizHistory = {
   answeredAt: string;
 };
 
+type WordGuess = {
+  id: string;
+  player: string;
+  target: string;
+  guess: string;
+  result: LetterResult[];
+  createdAt: string;
+};
+
+type LetterResult = {
+  letter: string;
+  status: "correct" | "present" | "absent";
+  correctPosition?: number;
+};
+
+type WordGame = {
+  createdBy: string;
+  createdAt: string;
+  players: string[];
+  round: number;
+  status: "waiting" | "active" | "finished";
+  words?: Record<string, string>;
+  guesses?: WordGuess[];
+};
+
+type WordGameHistory = {
+  id: string;
+  round: number;
+  players: string[];
+  words: Record<string, string>;
+  guesses: WordGuess[];
+  startedAt: string;
+  finishedAt: string;
+};
+
 const users = ["Geovanna", "Natanael"];
+const WORD_GAME_ID = "geovanna-natanael";
 
 const surprises = [
   "💕 Você é a razão do meu sorriso todos os dias!",
@@ -53,6 +90,13 @@ export default function Extras() {
   const [showResult, setShowResult] = useState(false);
   const [surprise, setSurprise] = useState<string | null>(null);
   const [hearts, setHearts] = useState<{ id: number; x: number }[]>([]);
+  const [wordGame, setWordGame] = useState<WordGame | null>(null);
+  const [wordGameHistory, setWordGameHistory] = useState<WordGameHistory[]>([]);
+  const [secretWord, setSecretWord] = useState("");
+  const [guessWord, setGuessWord] = useState("");
+  const [wordGameError, setWordGameError] = useState("");
+  const [isStartingWordRound, setIsStartingWordRound] = useState(false);
+  const [isSavingSecretWord, setIsSavingSecretWord] = useState(false);
 
   // Estado do formulário para nova pergunta
   const emptyQuizDraft = () =>
@@ -63,6 +107,13 @@ export default function Extras() {
     }));
 
   const [newQuestions, setNewQuestions] = useState<QuizQuestion[]>(emptyQuizDraft);
+  const hasWordRoom = Boolean(wordGame);
+  const isWordRoundActive = wordGame?.status === "active";
+  const partnerSecret = wordGame?.words?.[partnerName];
+  const currentUserSecret = wordGame?.words?.[currentUser];
+  const wordGuesses = (wordGame?.guesses ?? []).filter(
+    (guess) => guess.player === currentUser || guess.target === currentUser
+  );
 
   useEffect(() => {
     if (!db) return;
@@ -104,6 +155,33 @@ export default function Extras() {
     });
     return () => unsub();
   }, [currentUser]);
+
+  useEffect(() => {
+    if (!db) return;
+
+    const unsub = onSnapshot(doc(db, "word_games", WORD_GAME_ID), (snap) => {
+      setWordGame(snap.exists() ? snap.data() as WordGame : null);
+    }, (error) => {
+      console.error("Erro ao carregar jogo de palavras:", error);
+      setWordGameError("Nao foi possivel carregar o jogo de palavras.");
+    });
+
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (!db) return;
+    const q = query(collection(db, "word_games_history"), orderBy("finishedAt", "desc"));
+    const unsub = onSnapshot(q, (snap) => {
+      const dbHistory = snap.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }) as WordGameHistory);
+      setWordGameHistory(dbHistory);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     setCurrentQuestion(0);
@@ -200,6 +278,167 @@ export default function Extras() {
     setShowResult(false);
   };
 
+  const normalizeWord = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z]/g, "")
+      .toUpperCase()
+      .slice(0, 4);
+
+  const getWordResult = (guess: string, target: string): LetterResult[] =>
+    guess.split("").map((letter, index) => {
+      if (letter === target[index]) {
+        return { letter, status: "correct" };
+      }
+
+      const correctPosition = target.indexOf(letter);
+      if (correctPosition >= 0) {
+        return { letter, status: "present", correctPosition };
+      }
+
+      return { letter, status: "absent" };
+    });
+
+  const startWordRound = async () => {
+    if (!db) {
+      setWordGameError("Firebase nao configurado.");
+      return;
+    }
+
+    try {
+      setIsStartingWordRound(true);
+      setWordGameError("");
+      await setDoc(doc(db, "word_games", WORD_GAME_ID), {
+        createdBy: currentUser,
+        createdAt: new Date().toISOString(),
+        players: users,
+        status: "active",
+        round: (wordGame?.round ?? 0) + 1,
+        words: {},
+        guesses: [],
+      }, { merge: true });
+      setSecretWord("");
+      setGuessWord("");
+    } catch (error) {
+      console.error("Erro ao iniciar partida:", error);
+      const firebaseError = error as { code?: string };
+      setWordGameError(
+        firebaseError.code === "permission-denied"
+          ? "Permissao negada. Publique as regras do Firestore liberando word_games."
+          : "Nao foi possivel criar a sala."
+      );
+    } finally {
+      setIsStartingWordRound(false);
+    }
+  };
+
+  const saveSecretWord = async () => {
+    const word = normalizeWord(secretWord);
+    if (!db) {
+      setWordGameError("Firebase nao configurado.");
+      return;
+    }
+
+    if (word.length !== 4) {
+      setWordGameError("A palavra precisa ter exatamente 4 letras.");
+      return;
+    }
+
+    try {
+      setIsSavingSecretWord(true);
+      setWordGameError("");
+      await setDoc(doc(db, "word_games", WORD_GAME_ID), {
+        createdBy: wordGame?.createdBy ?? currentUser,
+        createdAt: wordGame?.createdAt ?? new Date().toISOString(),
+        players: users,
+        status: "active",
+        round: isWordRoundActive ? wordGame?.round ?? 1 : (wordGame?.round ?? 0) + 1,
+        words: {
+          ...(wordGame?.words ?? {}),
+          [currentUser]: word,
+        },
+        guesses: isWordRoundActive ? wordGame?.guesses ?? [] : [],
+      }, { merge: true });
+      setSecretWord("");
+      toast.success("Sua palavra foi salva!");
+    } catch (error) {
+      console.error("Erro ao salvar palavra:", error);
+      const firebaseError = error as { code?: string };
+      setWordGameError(
+        firebaseError.code === "permission-denied"
+          ? "Permissao negada. Publique as regras do Firestore liberando word_games."
+          : "Nao foi possivel salvar sua palavra."
+      );
+    } finally {
+      setIsSavingSecretWord(false);
+    }
+  };
+
+  const submitWordGuess = async () => {
+    const guess = normalizeWord(guessWord);
+    if (!db || !isWordRoundActive) {
+      setWordGameError("Inicie uma partida antes de jogar.");
+      return;
+    }
+
+    if (guess.length !== 4) {
+      setWordGameError("Seu palpite precisa ter exatamente 4 letras.");
+      return;
+    }
+
+    if (!partnerSecret) {
+      setWordGameError(`${partnerName} ainda nao cadastrou uma palavra.`);
+      return;
+    }
+
+    const newGuess: WordGuess = {
+      id: `${Date.now()}-${currentUser}`,
+      player: currentUser,
+      target: partnerName,
+      guess,
+      result: getWordResult(guess, partnerSecret),
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      setWordGameError("");
+      await setDoc(doc(db, "word_games", WORD_GAME_ID), {
+        guesses: [...(wordGame?.guesses ?? []), newGuess],
+      }, { merge: true });
+      setGuessWord("");
+    } catch (error) {
+      console.error("Erro ao enviar palpite:", error);
+      setWordGameError("Nao foi possivel enviar seu palpite.");
+    }
+  };
+
+  const finishWordRound = async () => {
+    if (!db || !wordGame) return;
+
+    try {
+      // Salvar no histórico
+      await addDoc(collection(db, "word_games_history"), {
+        round: wordGame.round,
+        players: wordGame.players,
+        words: wordGame.words ?? {},
+        guesses: wordGame.guesses ?? [],
+        startedAt: wordGame.createdAt,
+        finishedAt: new Date().toISOString(),
+      });
+      
+      // Atualizar status da partida
+      await setDoc(doc(db, "word_games", WORD_GAME_ID), {
+        status: "finished",
+      }, { merge: true });
+      
+      toast.success("Partida encerrada e salva no histórico!");
+    } catch (error) {
+      console.error("Erro ao encerrar partida:", error);
+      toast.error("Erro ao encerrar partida");
+    }
+  };
+
   const showSurprise = () => {
     const randomSurprise = surprises[Math.floor(Math.random() * surprises.length)];
     setSurprise(randomSurprise);
@@ -228,10 +467,10 @@ export default function Extras() {
         className="text-center mb-12"
       >
         <h1 className="font-romantic text-5xl text-primary mb-1">
-          Extras Especiais
+          Jogos e Surpresas
         </h1>
         <p className="text-slate-500 dark:text-slate-400 text-sm">
-          Surpresas e diversão para nós dois
+          Quizzes, desafios e pequenos momentos para nós dois
         </p>
       </motion.div>
 
@@ -279,6 +518,168 @@ export default function Extras() {
             </motion.div>
           )}
 
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="rounded-3xl bg-white p-5 shadow-md dark:bg-slate-900"
+          >
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <Gamepad2 size={22} />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100">
+                  Adivinhe a Palavra
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Palavras secretas de 4 letras
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">
+                      Sala da partida
+                    </p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {isWordRoundActive
+                        ? `Partida ${wordGame?.round ?? 1} em andamento`
+                        : hasWordRoom
+                        ? "Partida encerrada. Inicie uma nova quando quiser"
+                        : "Inicie uma partida para jogar"}
+                    </p>
+                  </div>
+                  {isWordRoundActive ? (
+                    <button
+                      onClick={finishWordRound}
+                      className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 active:scale-95 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
+                    >
+                      Encerrar
+                    </button>
+                  ) : (
+                    <button
+                      onClick={startWordRound}
+                      disabled={isStartingWordRound}
+                      className="rounded-xl bg-pink-500 px-3 py-2 text-sm font-bold text-white shadow-md shadow-pink-500/20 active:scale-95 disabled:cursor-not-allowed disabled:bg-pink-300"
+                    >
+                      {isStartingWordRound ? "Criando..." : "Criar sala"}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="font-semibold text-slate-900 dark:text-slate-100">
+                    Sua palavra
+                  </p>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {currentUserSecret ? "Cadastrada" : "Pendente"}
+                  </span>
+                </div>
+                {currentUserSecret && (
+                  <p className="mb-3 rounded-xl bg-primary/10 p-3 text-center font-black uppercase tracking-[0.4em] text-primary">
+                    {currentUserSecret}
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    value={secretWord}
+                    onChange={(event) => setSecretWord(normalizeWord(event.target.value))}
+                    placeholder="AMOR"
+                    maxLength={4}
+                    className="min-w-0 flex-1 rounded-xl border border-slate-200 p-3 text-center uppercase tracking-[0.4em] outline-none focus:ring-2 focus:ring-primary/50 dark:border-slate-800 dark:bg-slate-800 dark:text-white"
+                  />
+                  <button
+                    onClick={saveSecretWord}
+                    disabled={isSavingSecretWord}
+                    className="rounded-xl bg-pink-500 px-4 py-3 font-bold text-white shadow-md shadow-pink-500/20 active:scale-95 disabled:cursor-not-allowed disabled:bg-pink-300"
+                  >
+                    {isSavingSecretWord ? "Salvando..." : "Salvar"}
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                  Digite 4 letras. Se nao houver sala, ela sera criada automaticamente.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="font-semibold text-slate-900 dark:text-slate-100">
+                    Palavra de {partnerName}
+                  </p>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {partnerSecret ? "Pronta" : "Aguardando"}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    value={guessWord}
+                    onChange={(event) => setGuessWord(normalizeWord(event.target.value))}
+                    placeholder="LUAU"
+                    maxLength={4}
+                    disabled={!isWordRoundActive || !partnerSecret}
+                    className="min-w-0 flex-1 rounded-xl border border-slate-200 p-3 text-center uppercase tracking-[0.4em] outline-none focus:ring-2 focus:ring-primary/50 dark:border-slate-800 dark:bg-slate-800 dark:text-white"
+                  />
+                  <button
+                    onClick={submitWordGuess}
+                    disabled={!isWordRoundActive || !partnerSecret}
+                    className="rounded-xl bg-slate-900 px-4 py-3 font-bold text-white shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-700"
+                  >
+                    Tentar
+                  </button>
+                </div>
+              </div>
+
+              {wordGameError && (
+                <p className="rounded-xl bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-300">
+                  {wordGameError}
+                </p>
+              )}
+
+              {wordGuesses.length > 0 && (
+                <div className="space-y-3">
+                  {wordGuesses.slice().reverse().map((guess) => (
+                    <div
+                      key={guess.id}
+                      className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/70"
+                    >
+                      <div className="mb-2 flex items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+                        <span>{guess.player} tentou adivinhar {guess.target}</span>
+                        <span>{guess.guess === wordGame?.words?.[guess.target] ? "Acertou" : "Tentativa"}</span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {guess.result.map((item, index) => (
+                          <div
+                            key={`${guess.id}-${index}`}
+                            className={`flex aspect-square flex-col items-center justify-center rounded-xl text-base font-black text-white ${
+                              item.status === "correct"
+                                ? "bg-emerald-500"
+                                : item.status === "present"
+                                ? "bg-amber-500"
+                                : "bg-slate-400 dark:bg-slate-700"
+                            }`}
+                          >
+                            <span>{item.letter}</span>
+                            {item.status === "present" && item.correctPosition !== undefined && (
+                              <span className="text-[10px] font-bold leading-none">
+                                pos {item.correctPosition + 1}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+
           <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -322,6 +723,54 @@ export default function Extras() {
                     </p>
                   </div>
                 ))}
+              </div>
+            </motion.div>
+          )}
+
+          {wordGameHistory.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.38 }}
+              className="rounded-3xl bg-white p-5 shadow-md dark:bg-slate-900"
+            >
+              <h3 className="mb-4 font-bold text-slate-900 dark:text-slate-100">
+                Histórico de partidas (Adivinhe a Palavra)
+              </h3>
+              <div className="space-y-3">
+                {wordGameHistory.map((item) => {
+                  const totalGuesses = item.guesses.length;
+                  const correctGuesses = item.guesses.filter(
+                    (guess) => guess.guess === item.words[guess.target]
+                  ).length;
+                  return (
+                    <div
+                      key={item.id}
+                      className="rounded-2xl border border-slate-200 p-4 text-sm dark:border-slate-800"
+                    >
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">
+                          Partida {item.round}
+                        </span>
+                        <span className="rounded-full bg-emerald-100 px-3 py-1 font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                          {correctGuesses}/{totalGuesses}
+                        </span>
+                      </div>
+                      <p className="text-slate-500 dark:text-slate-400">
+                        Jogadores: {item.players.join(" vs ")}
+                      </p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                        {new Date(item.finishedAt).toLocaleDateString("pt-BR", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </motion.div>
           )}
