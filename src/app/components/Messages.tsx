@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { Send, Heart } from "lucide-react";
 import { format } from "date-fns";
-import { db } from "..//../Firebase";
+import { db } from "../../Firebase";
 import {
   collection,
   addDoc,
