@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Heart, Trash2, Pencil } from "lucide-react";
 import toast from "react-hot-toast";
 
-import { db, storage, ensureAuth } from "../../Firebase";
+import { db, storage } from "../../Firebase";
 
 import {
   collection,
@@ -51,7 +51,6 @@ export default function Gallery() {
     const initGallery = async () => {
       if (!db) return;
 
-      await ensureAuth(); // Espera o login anônimo antes de pedir os dados
       const q = query(collection(db, "photos"), orderBy("createdAt", "desc"));
       unsub = onSnapshot(q, (snap) => {
         setPhotos(
@@ -74,7 +73,6 @@ export default function Gallery() {
       throw new Error("Firebase Storage não configurado.");
     }
 
-    await ensureAuth();
     const fileRef = ref(storage, `photos/${Date.now()}-${file.name}`);
     await uploadBytes(fileRef, file);
     return await getDownloadURL(fileRef);
