@@ -81,7 +81,7 @@ export default function Gallery() {
   // ➕ ADD FOTO
   async function handleAdd(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !db) return;
 
     setUploading(true);
     setUploadError(null);
@@ -121,7 +121,7 @@ export default function Gallery() {
 
   // 🖼 EDIT IMAGE
   async function handleEditImage(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!selectedPhoto) return;
+    if (!selectedPhoto || !db) return;
 
     const file = e.target.files?.[0];
     if (!file) return;
