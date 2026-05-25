@@ -1,0 +1,33 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /milestones/{milestoneId} {
+      allow read, write: if true;
+    }
+
+    match /messages/{messageId} {
+      allow read, write: if true;
+    }
+
+    match /photos/{photoId} {
+      allow read, write: if true;
+    }
+
+    match /quiz/{quizId} {
+      allow read, write: if true;
+    }
+
+    match /users_status/{userId} {
+      allow read, write: if true;
+    }
+
+    match /games/{gameId} {
+      allow read, write: if true;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
