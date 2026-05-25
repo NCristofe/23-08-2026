@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Trash2, Pencil } from "lucide-react";
 
-import { db, auth } from "../../Firebase";
+import { db, ensureAuth } from "../../Firebase";
 import {
   collection,
   addDoc,
@@ -12,8 +12,6 @@ import {
   orderBy,
   query,
 } from "firebase/firestore";
-
-import { onAuthStateChanged } from "firebase/auth";
 
 type Milestone = {
   id: string;
@@ -30,9 +28,7 @@ type Milestone = {
 };
 
 export default function Timeline() {
-  const [user, setUser] = useState<any>(null);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
-
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -40,34 +36,37 @@ export default function Timeline() {
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
 
-  // 🔥 usuário real
-  useEffect(() => {
-    if (!auth) return;
-
-    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
-    return () => unsub();
-  }, []);
+  const currentUser = localStorage.getItem("currentUser") ?? "Anônimo";
 
   function getUserName() {
-    return user?.displayName || user?.email || "Anônimo";
+    return currentUser;
   }
 
   // 🔥 carregar dados em tempo real
   useEffect(() => {
-    if (!db) return;
+    let unsub: () => void;
 
-    const q = query(collection(db, "milestones"), orderBy("createdAt", "desc"));
+    const init = async () => {
+      await ensureAuth();
 
-    const unsub = onSnapshot(q, (snapshot) => {
-      setMilestones(
-        snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Milestone[]
+      const q = query(
+        collection(db, "milestones"),
+        orderBy("createdAt", "desc")
       );
-    });
 
-    return () => unsub();
+      unsub = onSnapshot(q, (snapshot) => {
+        setMilestones(
+          snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as Milestone[]
+        );
+      });
+    };
+
+    init();
+
+    return () => unsub?.();
   }, []);
 
   // ➕ ou ✏️ salvar
@@ -184,23 +183,39 @@ export default function Timeline() {
       {/* LISTA */}
       <div className="space-y-6">
         {milestones.map((item) => (
-          <div key={item.id} className="bg-white dark:bg-slate-900 p-5 rounded-3xl shadow-md border border-transparent dark:border-slate-800 transition-colors">
+          <div
+            key={item.id}
+            className="bg-white dark:bg-slate-900 p-5 rounded-3xl shadow-md border border-transparent dark:border-slate-800 transition-colors"
+          >
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-slate-500 dark:text-slate-400">{item.date}</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400">
+                {item.date}
+              </span>
 
               <div className="flex gap-2">
-                <button onClick={() => handleEdit(item)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors dark:text-slate-300">
+                <button
+                  onClick={() => handleEdit(item)}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors dark:text-slate-300"
+                >
                   <Pencil size={18} />
                 </button>
 
-                <button onClick={() => handleDelete(item.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors text-red-500">
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors text-red-500"
+                >
                   <Trash2 size={18} />
                 </button>
               </div>
             </div>
 
-            <h3 className="font-bold text-slate-900 dark:text-slate-100">{item.title}</h3>
-            <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{item.description}</p>
+            <h3 className="font-bold text-slate-900 dark:text-slate-100">
+              {item.title}
+            </h3>
+
+            <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
+              {item.description}
+            </p>
 
             <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 uppercase tracking-wider">
               <p>Criado por: {item.createdBy}</p>
