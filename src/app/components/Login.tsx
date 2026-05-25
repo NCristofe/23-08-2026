@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Heart, ArrowRight, Lock, Eye, EyeOff } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion } from "framer-motion"; // ✅ Import correto
 import { isAuthenticated, saveAuthentication, validatePassword } from "../auth";
 
 const users = [
@@ -17,7 +17,6 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Inicializa o tema salvo antes de mostrar a tela
     const savedTheme = localStorage.getItem("theme") || "light";
     if (savedTheme === "dark") {
       document.documentElement.classList.add("dark");
@@ -51,6 +50,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen w-full max-w-md mx-auto bg-gradient-to-br from-pink-50 via-rose-50 to-red-50 dark:from-slate-900 dark:via-slate-950 dark:to-black flex flex-col items-center justify-center p-6 relative overflow-hidden transition-colors duration-500">
+      {/* Corações animados */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 0.15, y: 0 }}
@@ -68,6 +68,7 @@ export default function Login() {
         <Heart className="w-20 h-20 text-primary fill-current" />
       </motion.div>
 
+      {/* Título */}
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -85,6 +86,7 @@ export default function Login() {
         <p className="text-slate-600 dark:text-slate-400">em tempo real</p>
       </motion.div>
 
+      {/* Formulário */}
       <motion.form
         onSubmit={handleLogin}
         initial={{ opacity: 0, y: 20 }}
@@ -114,6 +116,7 @@ export default function Login() {
           ))}
         </div>
 
+        {/* Campo senha */}
         <label className="block text-slate-700 dark:text-slate-300 font-medium mb-3" htmlFor="password">
           Insira a senha
         </label>
@@ -137,11 +140,7 @@ export default function Login() {
             className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-pink-500"
             aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
           >
-            {showPassword ? (
-              <EyeOff className="w-5 h-5" />
-            ) : (
-              <Eye className="w-5 h-5" />
-            )}
+            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
           </button>
         </div>
 
@@ -151,6 +150,7 @@ export default function Login() {
           </p>
         )}
 
+        {/* Botão submit */}
         <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -169,4 +169,4 @@ export default function Login() {
       </motion.form>
     </div>
   );
-} 
+}
