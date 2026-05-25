@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { Heart, ArrowRight, Lock, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion"; // ✅ Import correto
 import { isAuthenticated, saveAuthentication, validatePassword } from "../auth";
