@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router";
-import { motion, AnimatePresence } from "motion/react";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { Send, Heart } from "lucide-react";
 import { format } from "date-fns";
 import { db } from "../../Firebase";
@@ -11,6 +11,9 @@ import {
   orderBy,
   query,
   doc,
+  QuerySnapshot,
+  DocumentData,
+  DocumentSnapshot
 } from "firebase/firestore";
 
 interface Message {
@@ -62,9 +65,9 @@ export default function Messages() {
   // Ouvir status do parceiro
   useEffect(() => {
     if (!db || !otherUser) return;
-    const unsub = onSnapshot(doc(db, "users_status", otherUser.name), (doc) => {
-      if (doc.exists()) setPartnerStatus(doc.data());
-    }, (error) => {
+    const unsub = onSnapshot(doc(db, "users_status", otherUser.name), (snapshot: DocumentSnapshot<DocumentData>) => {
+      if (snapshot.exists()) setPartnerStatus(snapshot.data());
+    }, (error: any) => {
       console.error("Erro ao carregar status:", error);
     });
     return () => unsub();
@@ -75,9 +78,9 @@ export default function Messages() {
 
     const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
       setError("");
-      const msgs: Message[] = snapshot.docs.map((doc) => {
+      const msgs: Message[] = snapshot.docs.map((doc: any) => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -87,7 +90,7 @@ export default function Messages() {
         };
       });
       setMessages(msgs);
-    }, (error) => {
+    }, (error: any) => {
       console.error("Erro ao carregar mensagens:", error);
       setError(getFirebaseErrorMessage(error));
     });
