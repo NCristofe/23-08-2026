@@ -2,7 +2,10 @@
   "routes": [
     { "src": "/sw.js", "dest": "/dist/sw.js" },
     { "src": "/workbox-(.*).js", "dest": "/dist/workbox-$1.js" },
+    { "src": "/registerSW.js", "dest": "/dist/registerSW.js" },
     { "src": "/assets/(.*)", "dest": "/dist/assets/$1" },
+    { "src": "/favicon.ico", "dest": "/dist/favicon.ico" },
+    { "src": "/apple-touch-icon.png", "dest": "/dist/apple-touch-icon.png" },
     { "src": "/(.*)", "dest": "/dist/index.html" }
   ],
   "headers": [
@@ -14,6 +17,12 @@
     },
     {
       "source": "/sw.js",
+      "headers": [
+        { "key": "Content-Type", "value": "application/javascript" }
+      ]
+    },
+    {
+      "source": "/registerSW.js",
       "headers": [
         { "key": "Content-Type", "value": "application/javascript" }
       ]
