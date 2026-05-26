@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  base: '/', // raiz, funciona melhor no Vercel
+  base: '/', // raiz, evita prefixo duplicado no Vercel
 
   build: {
     outDir: 'dist',
@@ -26,7 +26,11 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icons/*.png'],
+      includeAssets: [
+        'favicon.ico',
+        'apple-touch-icon.png',
+        'icons/*.png'
+      ],
       devOptions: { enabled: true },
       manifest: {
         name: 'Nosso Amor',
