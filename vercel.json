@@ -1,4 +1,12 @@
 {
+  "headers": [
+    {
+      "source": "/assets/(.*).js",
+      "headers": [
+        { "key": "Content-Type", "value": "application/javascript" }
+      ]
+    }
+  ],
   "builds": [
     { "src": "vite.config.ts", "use": "@vercel/node" },
     { "src": "dist/**", "use": "@vercel/static" }
