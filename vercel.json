@@ -1,17 +1,8 @@
 {
-  "headers": [
+  "rewrites": [
     {
-      "source": "/assets/(.*).js",
-      "headers": [
-        { "key": "Content-Type", "value": "application/javascript" }
-      ]
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
-  ],
-  "builds": [
-    { "src": "vite.config.ts", "use": "@vercel/node" },
-    { "src": "dist/**", "use": "@vercel/static" }
-  ],
-  "routes": [
-    { "src": "/23-08-2026/(.*)", "dest": "dist/$1" }
   ]
 }
