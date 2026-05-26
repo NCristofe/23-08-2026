@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router";
+import { motion, AnimatePresence } from "motion/react";
 import { Send, Heart } from "lucide-react";
 import { format } from "date-fns";
-import { db } from "../../Firebase";
+import { db } from "..//../Firebase";
 import {
   collection,
   addDoc,
@@ -11,9 +11,6 @@ import {
   orderBy,
   query,
   doc,
-  QuerySnapshot,
-  DocumentData,
-  DocumentSnapshot
 } from "firebase/firestore";
 
 interface Message {
@@ -21,16 +18,6 @@ interface Message {
   text: string;
   sender: string;
   time: string;
-}
-
-function getFirebaseErrorMessage(error: unknown) {
-  const firebaseError = error as { code?: string; message?: string };
-
-  if (firebaseError.code === "permission-denied") {
-    return "Permissão negada no Firestore. Publique as regras liberando leitura e escrita em messages.";
-  }
-
-  return `Não foi possível enviar. ${firebaseError.code || firebaseError.message || "Veja o console para mais detalhes."}`;
 }
 
 const quickMessages = [
@@ -51,7 +38,6 @@ export default function Messages() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [partnerStatus, setPartnerStatus] = useState<any>(null);
-  const [error, setError] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const currentUser = localStorage.getItem("currentUser");
@@ -65,10 +51,8 @@ export default function Messages() {
   // Ouvir status do parceiro
   useEffect(() => {
     if (!db || !otherUser) return;
-    const unsub = onSnapshot(doc(db, "users_status", otherUser.name), (snapshot: DocumentSnapshot<DocumentData>) => {
-      if (snapshot.exists()) setPartnerStatus(snapshot.data());
-    }, (error: any) => {
-      console.error("Erro ao carregar status:", error);
+    const unsub = onSnapshot(doc(db, "users_status", otherUser.name), (doc) => {
+      if (doc.exists()) setPartnerStatus(doc.data());
     });
     return () => unsub();
   }, [otherUser]);
@@ -78,9 +62,8 @@ export default function Messages() {
 
     const q = query(collection(db, "messages"), orderBy("createdAt", "asc"));
 
-    const unsubscribe = onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
-      setError("");
-      const msgs: Message[] = snapshot.docs.map((doc: any) => {
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const msgs: Message[] = snapshot.docs.map((doc) => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -90,9 +73,6 @@ export default function Messages() {
         };
       });
       setMessages(msgs);
-    }, (error: any) => {
-      console.error("Erro ao carregar mensagens:", error);
-      setError(getFirebaseErrorMessage(error));
     });
 
     return () => unsubscribe();
@@ -106,7 +86,6 @@ export default function Messages() {
     if (!newMessage.trim() || !db) return;
 
     try {
-      setError("");
       await addDoc(collection(db, "messages"), {
         text: newMessage,
         sender: currentUser ?? "Anônimo",
@@ -117,7 +96,6 @@ export default function Messages() {
       setNewMessage("");
     } catch (error) {
       console.error("Erro ao enviar:", error);
-      setError(getFirebaseErrorMessage(error));
     }
   };
 
@@ -125,19 +103,14 @@ export default function Messages() {
     if (!db) return;
 
     try {
-      setError("");
-      const now = new Date();
-      const time = `${now.getHours()}:${now.getMinutes().toString().padStart(2, "0")}`;
-
       await addDoc(collection(db, "messages"), {
         text,
         sender: currentUser ?? "Anônimo",
-        time,
+        time: format(new Date(), "HH:mm"),
         createdAt: new Date(),
       });
     } catch (error) {
-      console.error("Erro ao enviar mensagem rápida:", error);
-      setError(getFirebaseErrorMessage(error));
+      console.error(error);
     }
   };
 
@@ -181,12 +154,6 @@ export default function Messages() {
 
       {/* MENSAGENS */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-950">
-        {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
-            {error}
-          </div>
-        )}
-
         <AnimatePresence>
           {messages.map((message, index) => {
             const isMe = currentUser !== null && message.sender === currentUser;
