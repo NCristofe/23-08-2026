@@ -1,12 +1,9 @@
 {
-  "builds": [
-    { "src": "dist/**", "use": "@vercel/static" }
-  ],
   "routes": [
     { "src": "/sw.js", "dest": "/dist/sw.js" },
     { "src": "/workbox-(.*).js", "dest": "/dist/workbox-$1.js" },
     { "src": "/assets/(.*)", "dest": "/dist/assets/$1" },
-    { "src": "/(.*)", "dest": "/dist/$1" }
+    { "src": "/(.*)", "dest": "/dist/index.html" }
   ],
   "headers": [
     {
