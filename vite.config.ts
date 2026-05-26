@@ -4,10 +4,14 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-const isProd = process.env.NODE_ENV === 'production'
+const isProd = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1'
 
 export default defineConfig({
-  base: isProd ? '/23-08-2026/' : '/',
+  base: '/', // Vercel funciona melhor servindo da raiz
+
+  build: {
+    outDir: "dist",
+  },
 
   plugins: [
     react(),
@@ -16,6 +20,7 @@ export default defineConfig({
 
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'auto', // Garante que o registerSW.js seja injetado
 
       includeAssets: [
         'favicon.ico',
@@ -38,8 +43,8 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
 
-        scope: isProd ? '/23-08-2026/' : '/',
-        start_url: isProd ? '/23-08-2026/' : '/',
+        scope: '/',
+        start_url: '/',
 
         icons: [
           {
