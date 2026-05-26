@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
 const firebaseConfig = {
@@ -28,15 +29,17 @@ export const missingFirebaseConfig = requiredKeys.filter(
 export const hasFirebaseConfig = missingFirebaseConfig.length === 0;
 
 let db: ReturnType<typeof getFirestore> | null = null;
+let storage: ReturnType<typeof getStorage> | null = null;
 let analytics = null;
 
 if (hasFirebaseConfig) {
   const app = initializeApp(firebaseConfig);
   db = getFirestore(app);
+  storage = getStorage(app);
   
   if (typeof window !== "undefined") {
     isSupported().then(yes => { if (yes) analytics = getAnalytics(app); });
   }
 }
 
-export { db, analytics };
+export { db, storage, analytics };
