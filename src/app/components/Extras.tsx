@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Heart, Gift, Star, Plus, X, Gamepad2 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -56,16 +56,20 @@ type WordGame = {
   players: string[];
   round: number;
   status: "waiting" | "active" | "finished";
+  letterCount: number;
   words?: Record<string, string>;
   guesses?: WordGuess[];
+  winners?: string[];
 };
 
 type WordGameHistory = {
   id: string;
   round: number;
   players: string[];
+  letterCount: number;
   words: Record<string, string>;
   guesses: WordGuess[];
+  winners: string[];
   startedAt: string;
   finishedAt: string;
 };
@@ -104,6 +108,9 @@ export default function Extras() {
   const [wordGameError, setWordGameError] = useState("");
   const [isStartingWordRound, setIsStartingWordRound] = useState(false);
   const [isSavingSecretWord, setIsSavingSecretWord] = useState(false);
+  const [letterCountDraft, setLetterCountDraft] = useState(4);
+  const [winCelebration, setWinCelebration] = useState<{ winner: string; word: string } | null>(null);
+  const celebratedGuessIds = useRef<Set<string>>(new Set());
 
   // Estado do formulário para nova pergunta
   const emptyQuizDraft = () =>
@@ -196,6 +203,20 @@ export default function Extras() {
     setShowResult(false);
   }, [activeQuiz?.id]);
 
+  // Detecta acertos em tempo real para ambos os jogadores
+  useEffect(() => {
+    if (!wordGame?.guesses || !wordGame.words) return;
+    for (const guess of wordGame.guesses) {
+      if (celebratedGuessIds.current.has(guess.id)) continue;
+      if (guess.guess === wordGame.words[guess.target]) {
+        celebratedGuessIds.current.add(guess.id);
+        setWinCelebration({ winner: guess.player, word: guess.guess });
+        setTimeout(() => setWinCelebration(null), 5000);
+        break;
+      }
+    }
+  }, [wordGame?.guesses]);
+
   const hasInvalidQuizDraft = newQuestions.some((item) =>
     !item.question.trim() || item.options.some((option) => !option.trim())
   );
@@ -285,13 +306,15 @@ export default function Extras() {
     setShowResult(false);
   };
 
-  const normalizeWord = (value: string) =>
+  const activeLetterCount = wordGame?.letterCount ?? letterCountDraft;
+
+  const normalizeWord = (value: string, length = activeLetterCount) =>
     value
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-zA-Z]/g, "")
       .toUpperCase()
-      .slice(0, 4);
+      .slice(0, length);
 
   const getWordResult = (guess: string, target: string): LetterResult[] =>
     guess.split("").map((letter, index) => {
@@ -309,7 +332,7 @@ export default function Extras() {
 
   const startWordRound = async () => {
     if (!db) {
-      setWordGameError("Firebase nao configurado.");
+      setWordGameError("Firebase não configurado.");
       return;
     }
 
@@ -322,9 +345,11 @@ export default function Extras() {
         players: users,
         status: "active",
         round: (wordGame?.round ?? 0) + 1,
+        letterCount: letterCountDraft,
         words: {},
         guesses: [],
-      }, { merge: true });
+        winners: [],
+      });
       setSecretWord("");
       setGuessWord("");
     } catch (error) {
@@ -332,8 +357,8 @@ export default function Extras() {
       const firebaseError = error as { code?: string };
       setWordGameError(
         firebaseError.code === "permission-denied"
-          ? "Permissao negada. Publique as regras do Firestore liberando word_games."
-          : "Nao foi possivel criar a sala."
+          ? "Permissão negada. Publique as regras do Firestore."
+          : "Não foi possível criar a sala."
       );
     } finally {
       setIsStartingWordRound(false);
@@ -341,14 +366,14 @@ export default function Extras() {
   };
 
   const saveSecretWord = async () => {
-    const word = normalizeWord(secretWord);
+    const word = normalizeWord(secretWord, activeLetterCount);
     if (!db) {
-      setWordGameError("Firebase nao configurado.");
+      setWordGameError("Firebase não configurado.");
       return;
     }
 
-    if (word.length !== 4) {
-      setWordGameError("A palavra precisa ter exatamente 4 letras.");
+    if (word.length !== activeLetterCount) {
+      setWordGameError(`A palavra precisa ter exatamente ${activeLetterCount} letras.`);
       return;
     }
 
@@ -378,14 +403,14 @@ export default function Extras() {
   };
 
   const submitWordGuess = async () => {
-    const guess = normalizeWord(guessWord);
+    const guess = normalizeWord(guessWord, activeLetterCount);
     if (!db || !isWordRoundActive) {
       setWordGameError("Inicie uma partida antes de jogar.");
       return;
     }
 
-    if (guess.length !== 4) {
-      setWordGameError("Seu palpite precisa ter exatamente 4 letras.");
+    if (guess.length !== activeLetterCount) {
+      setWordGameError(`Seu palpite precisa ter exatamente ${activeLetterCount} letras.`);
       return;
     }
 
@@ -394,6 +419,7 @@ export default function Extras() {
       return;
     }
 
+    const isCorrect = guess === partnerSecret;
     const newGuess: WordGuess = {
       id: `${Date.now()}-${currentUser}`,
       player: currentUser,
@@ -405,9 +431,9 @@ export default function Extras() {
 
     try {
       setWordGameError("");
-      await updateDoc(doc(db, "word_games", WORD_GAME_ID), {
-        guesses: arrayUnion(newGuess),
-      });
+      const updates: Record<string, any> = { guesses: arrayUnion(newGuess) };
+      if (isCorrect) updates.winners = arrayUnion(currentUser);
+      await updateDoc(doc(db, "word_games", WORD_GAME_ID), updates);
       setGuessWord("");
     } catch (error) {
       console.error("Erro ao enviar palpite:", error);
@@ -418,22 +444,19 @@ export default function Extras() {
   const finishWordRound = async () => {
     if (!db || !wordGame) return;
 
+    const winners = wordGame.winners ?? [];
     try {
-      // Salvar no histórico
       await addDoc(collection(db, "word_games_history"), {
         round: wordGame.round,
         players: wordGame.players,
+        letterCount: wordGame.letterCount ?? 4,
         words: wordGame.words ?? {},
         guesses: wordGame.guesses ?? [],
+        winners,
         startedAt: wordGame.createdAt,
         finishedAt: new Date().toISOString(),
       });
-      
-      // Atualizar status da partida
-      await setDoc(doc(db, "word_games", WORD_GAME_ID), {
-        status: "finished",
-      }, { merge: true });
-      
+      await setDoc(doc(db, "word_games", WORD_GAME_ID), { status: "finished", guesses: [] }, { merge: true });
       toast.success("Partida encerrada e salva no histórico!");
     } catch (error) {
       console.error("Erro ao encerrar partida:", error);
@@ -830,8 +853,22 @@ export default function Extras() {
   }
 
   // ── JOGO DE PALAVRAS ───────────────────────────────────────
+  // Placar geral calculado a partir do histórico
+  const scoreboard = users.reduce((acc, player) => {
+    acc[player] = { wins: 0, losses: 0 };
+    return acc;
+  }, {} as Record<string, { wins: number; losses: number }>);
+  wordGameHistory.forEach((game) => {
+    const gameWinners = game.winners ?? [];
+    users.forEach((player) => {
+      if (gameWinners.includes(player)) scoreboard[player].wins++;
+      else scoreboard[player].losses++;
+    });
+  });
+
   return (
     <div className="min-h-screen w-full p-6 pt-8 pb-10">
+      {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={backToList}
@@ -843,95 +880,139 @@ export default function Extras() {
       </div>
 
       <div className="space-y-4">
-        <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="font-semibold text-slate-900 dark:text-slate-100">Sala da partida</p>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                {isWordRoundActive
-                  ? `Partida ${wordGame?.round ?? 1} em andamento`
-                  : hasWordRoom
-                  ? "Partida encerrada. Inicie uma nova quando quiser"
-                  : "Inicie uma partida para jogar"}
-              </p>
+        {/* Placar */}
+        {wordGameHistory.length > 0 && (
+          <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4">
+            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Placar</p>
+            <div className="grid grid-cols-2 gap-3">
+              {users.map((player) => (
+                <div key={player} className={`rounded-xl p-3 text-center ${player === currentUser ? "bg-primary/10" : "bg-slate-50 dark:bg-slate-800"}`}>
+                  <p className="font-bold text-slate-900 dark:text-slate-100 text-sm">{player}</p>
+                  <p className="text-2xl font-black text-emerald-500 mt-1">{scoreboard[player]?.wins ?? 0}V</p>
+                  <p className="text-xs text-slate-400">{scoreboard[player]?.losses ?? 0} derrotas</p>
+                </div>
+              ))}
             </div>
-            {isWordRoundActive ? (
-              <button
-                onClick={finishWordRound}
-                className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 active:scale-95 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
-              >
-                Encerrar
-              </button>
-            ) : (
+          </div>
+        )}
+
+        {/* Sala da partida */}
+        <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800 bg-white dark:bg-slate-900">
+          {!isWordRoundActive ? (
+            <>
+              <p className="font-semibold text-slate-900 dark:text-slate-100 mb-1">Nova partida</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                {hasWordRoom ? "Partida encerrada. Configure e inicie uma nova." : "Configure e inicie uma partida."}
+              </p>
+
+              {/* Seletor de letras */}
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">Quantidade de letras</p>
+              <div className="flex gap-2 mb-4">
+                {[3, 4, 5, 6].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setLetterCountDraft(n)}
+                    className={`flex-1 py-2 rounded-xl font-bold text-sm transition-all ${
+                      letterCountDraft === n
+                        ? "bg-primary text-white shadow-md"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+
               <button
                 onClick={startWordRound}
                 disabled={isStartingWordRound}
-                className="rounded-xl bg-pink-500 px-3 py-2 text-sm font-bold text-white shadow-md shadow-pink-500/20 active:scale-95 disabled:cursor-not-allowed disabled:bg-pink-300"
+                className="w-full rounded-xl bg-pink-500 py-3 font-bold text-white shadow-md shadow-pink-500/20 active:scale-95 disabled:cursor-not-allowed disabled:bg-pink-300"
               >
                 {isStartingWordRound ? "Criando..." : "Criar sala"}
               </button>
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="font-semibold text-slate-900 dark:text-slate-100">Sua palavra</p>
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              {currentUserSecret ? "Cadastrada" : "Pendente"}
-            </span>
-          </div>
-          {currentUserSecret && (
-            <p className="mb-3 rounded-xl bg-primary/10 p-3 text-center font-black uppercase tracking-[0.4em] text-primary">
-              {currentUserSecret}
-            </p>
+            </>
+          ) : (
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  Partida {wordGame?.round} · {activeLetterCount} letras
+                </p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Em andamento</p>
+              </div>
+              {wordGame?.createdBy === currentUser && (
+                <button
+                  onClick={finishWordRound}
+                  className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 active:scale-95 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
+                >
+                  Encerrar
+                </button>
+              )}
+            </div>
           )}
-          <div className="flex gap-2">
-            <input
-              value={secretWord}
-              onChange={(e) => setSecretWord(normalizeWord(e.target.value))}
-              placeholder="AMOR"
-              maxLength={4}
-              className="min-w-0 flex-1 rounded-xl border border-slate-200 p-3 text-center uppercase tracking-[0.4em] outline-none focus:ring-2 focus:ring-primary/50 dark:border-slate-800 dark:bg-slate-800 dark:text-white"
-            />
-            <button
-              onClick={saveSecretWord}
-              disabled={isSavingSecretWord}
-              className="rounded-xl bg-pink-500 px-4 py-3 font-bold text-white shadow-md shadow-pink-500/20 active:scale-95 disabled:cursor-not-allowed disabled:bg-pink-300"
-            >
-              {isSavingSecretWord ? "Salvando..." : "Salvar"}
-            </button>
-          </div>
-          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-            Digite 4 letras. Se não houver sala, ela será criada automaticamente.
-          </p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="font-semibold text-slate-900 dark:text-slate-100">Palavra de {partnerName}</p>
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              {partnerSecret ? "Pronta" : "Aguardando"}
-            </span>
+        {/* Minha palavra secreta */}
+        {isWordRoundActive && (
+          <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="font-semibold text-slate-900 dark:text-slate-100">Minha palavra secreta</p>
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${currentUserSecret ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"}`}>
+                {currentUserSecret ? "Salva ✓" : "Pendente"}
+              </span>
+            </div>
+            {currentUserSecret && (
+              <p className="mb-3 rounded-xl bg-primary/10 p-3 text-center font-black uppercase tracking-[0.4em] text-primary">
+                {currentUserSecret}
+              </p>
+            )}
+            <div className="flex gap-2">
+              <input
+                value={secretWord}
+                onChange={(e) => setSecretWord(normalizeWord(e.target.value, activeLetterCount))}
+                placeholder={"A".repeat(activeLetterCount)}
+                maxLength={activeLetterCount}
+                className="min-w-0 flex-1 rounded-xl border border-slate-200 p-3 text-center uppercase tracking-[0.4em] outline-none focus:ring-2 focus:ring-primary/50 dark:border-slate-800 dark:bg-slate-800 dark:text-white"
+              />
+              <button
+                onClick={saveSecretWord}
+                disabled={isSavingSecretWord}
+                className="rounded-xl bg-pink-500 px-4 py-3 font-bold text-white shadow-md shadow-pink-500/20 active:scale-95 disabled:cursor-not-allowed disabled:bg-pink-300"
+              >
+                {isSavingSecretWord ? "..." : "Salvar"}
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-slate-400">Digite exatamente {activeLetterCount} letras.</p>
           </div>
-          <div className="flex gap-2">
-            <input
-              value={guessWord}
-              onChange={(e) => setGuessWord(normalizeWord(e.target.value))}
-              placeholder="LUAU"
-              maxLength={4}
-              disabled={!isWordRoundActive || !partnerSecret}
-              className="min-w-0 flex-1 rounded-xl border border-slate-200 p-3 text-center uppercase tracking-[0.4em] outline-none focus:ring-2 focus:ring-primary/50 dark:border-slate-800 dark:bg-slate-800 dark:text-white"
-            />
-            <button
-              onClick={submitWordGuess}
-              disabled={!isWordRoundActive || !partnerSecret}
-              className="rounded-xl bg-slate-900 px-4 py-3 font-bold text-white shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-700"
-            >
-              Tentar
-            </button>
+        )}
+
+        {/* Tentar adivinhar */}
+        {isWordRoundActive && (
+          <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="font-semibold text-slate-900 dark:text-slate-100">Palavra de {partnerName}</p>
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${partnerSecret ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}>
+                {partnerSecret ? "Pronta" : "Aguardando..."}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={guessWord}
+                onChange={(e) => setGuessWord(normalizeWord(e.target.value, activeLetterCount))}
+                placeholder={"?".repeat(activeLetterCount)}
+                maxLength={activeLetterCount}
+                disabled={!partnerSecret}
+                className="min-w-0 flex-1 rounded-xl border border-slate-200 p-3 text-center uppercase tracking-[0.4em] outline-none focus:ring-2 focus:ring-primary/50 dark:border-slate-800 dark:bg-slate-800 dark:text-white disabled:opacity-50"
+              />
+              <button
+                onClick={submitWordGuess}
+                disabled={!partnerSecret}
+                className="rounded-xl bg-emerald-500 px-4 py-3 font-bold text-white shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Tentar
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {wordGameError && (
           <p className="rounded-xl bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-300">
@@ -939,52 +1020,63 @@ export default function Extras() {
           </p>
         )}
 
-        {wordGuesses.length > 0 && (
+        {/* Tentativas */}
+        {isWordRoundActive && wordGuesses.length > 0 && (
           <div className="space-y-3">
-            {wordGuesses.slice().reverse().map((guess) => (
-              <div key={guess.id} className="rounded-2xl bg-white p-3 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                <div className="mb-2 flex items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
-                  <span>{guess.player} tentou adivinhar {guess.target}</span>
-                  <span>{guess.guess === wordGame?.words?.[guess.target] ? "✅ Acertou" : "Tentativa"}</span>
+            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Tentativas</p>
+            {wordGuesses.slice().reverse().map((guess) => {
+              const isHit = guess.guess === wordGame?.words?.[guess.target];
+              return (
+                <div key={guess.id} className={`rounded-2xl p-3 border ${isHit ? "border-emerald-300 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30" : "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"}`}>
+                  <div className="mb-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <span>{guess.player === currentUser ? "Você" : guess.player} → {guess.target}</span>
+                    <span className={isHit ? "font-bold text-emerald-600 dark:text-emerald-400" : ""}>{isHit ? "🎉 Acertou!" : "Tentativa"}</span>
+                  </div>
+                  <div className={`grid gap-2`} style={{ gridTemplateColumns: `repeat(${guess.result.length}, 1fr)` }}>
+                    {guess.result.map((item, index) => (
+                      <div
+                        key={`${guess.id}-${index}`}
+                        className={`flex aspect-square flex-col items-center justify-center rounded-xl text-sm font-black text-white ${
+                          item.status === "correct" ? "bg-emerald-500" : item.status === "present" ? "bg-amber-500" : "bg-slate-400 dark:bg-slate-600"
+                        }`}
+                      >
+                        <span>{item.letter}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="grid grid-cols-4 gap-2">
-                  {guess.result.map((item, index) => (
-                    <div
-                      key={`${guess.id}-${index}`}
-                      className={`flex aspect-square flex-col items-center justify-center rounded-xl text-base font-black text-white ${
-                        item.status === "correct" ? "bg-emerald-500" : item.status === "present" ? "bg-amber-500" : "bg-slate-400 dark:bg-slate-700"
-                      }`}
-                    >
-                      <span>{item.letter}</span>
-                      {item.status === "present" && item.correctPosition !== undefined && (
-                        <span className="text-[10px] font-bold leading-none">pos {item.correctPosition + 1}</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
+        {/* Histórico de partidas */}
         {wordGameHistory.length > 0 && (
           <div className="rounded-3xl bg-white p-5 shadow-md dark:bg-slate-900">
-            <h3 className="mb-4 font-bold text-slate-900 dark:text-slate-100">Histórico de partidas</h3>
+            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3">Histórico de partidas</p>
             <div className="space-y-3">
               {wordGameHistory.map((item) => {
-                const totalGuesses = item.guesses.length;
-                const correctGuesses = item.guesses.filter((g) => g.guess === item.words[g.target]).length;
+                const gameWinners = item.winners ?? [];
                 return (
                   <div key={item.id} className="rounded-2xl border border-slate-200 p-4 text-sm dark:border-slate-800">
-                    <div className="flex items-center justify-between gap-3 mb-1">
-                      <span className="font-semibold text-slate-900 dark:text-slate-100">Partida {item.round}</span>
-                      <span className="rounded-full bg-emerald-100 px-3 py-1 font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-                        {correctGuesses}/{totalGuesses}
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">
+                        Partida {item.round} · {item.letterCount ?? 4} letras
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        {new Date(item.finishedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 dark:text-slate-500">
-                      {new Date(item.finishedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                    </p>
+                    <div className="flex gap-2 flex-wrap">
+                      {users.map((player) => {
+                        const won = gameWinners.includes(player);
+                        return (
+                          <span key={player} className={`px-2 py-0.5 rounded-full text-xs font-semibold ${won ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}>
+                            {player}: {won ? "Vitória 🏆" : "Derrota"}
+                          </span>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               })}
@@ -992,6 +1084,53 @@ export default function Extras() {
           </div>
         )}
       </div>
+
+      {/* Modal de celebração de vitória */}
+      <AnimatePresence>
+        {winCelebration && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end justify-center p-6 pb-12"
+            onClick={() => setWinCelebration(null)}
+          >
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="bg-white dark:bg-slate-900 rounded-3xl p-8 w-full max-w-sm shadow-2xl text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 0.6, repeat: 3 }}
+                className="text-5xl mb-4"
+              >
+                🎉
+              </motion.div>
+              <h3 className="font-bold text-2xl text-slate-900 dark:text-slate-100 mb-2">
+                {winCelebration.winner === currentUser ? "Você acertou!" : `${winCelebration.winner} acertou!`}
+              </h3>
+              <p className="text-slate-500 dark:text-slate-400 mb-1">
+                {winCelebration.winner === currentUser
+                  ? `Você descobriu a palavra de ${partnerName}!`
+                  : `${winCelebration.winner} descobriu a sua palavra!`}
+              </p>
+              <p className="text-2xl font-black uppercase tracking-widest text-primary mt-3">
+                {winCelebration.word}
+              </p>
+              <button
+                onClick={() => setWinCelebration(null)}
+                className="mt-6 w-full bg-primary text-white py-3 rounded-xl font-bold"
+              >
+                Fechar
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
