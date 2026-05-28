@@ -86,6 +86,7 @@ export default function Extras() {
   const currentUser = localStorage.getItem("currentUser") ?? "Anônimo";
   const partnerName = users.find((user) => user !== currentUser) ?? "seu amor";
 
+  const [activeGame, setActiveGame] = useState<"quiz" | "word" | null>(null);
   const [availableQuizzes, setAvailableQuizzes] = useState<QuizSet[]>([]);
   const [history, setHistory] = useState<QuizHistory[]>([]);
   const [activeQuiz, setActiveQuiz] = useState<QuizSet | null>(null);
