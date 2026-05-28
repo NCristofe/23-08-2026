@@ -34,6 +34,10 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    match /word_games_history/{historyId} {
+      allow read, write: if true;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
