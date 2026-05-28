@@ -461,20 +461,175 @@ export default function Extras() {
     }, 4000);
   };
 
-  return (
-    <div className="min-h-screen w-full p-6 pt-8 pb-24">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-12"
-      >
-        <h1 className="font-romantic text-5xl text-primary mb-1">
-          Jogos e Surpresas
-        </h1>
-        <p className="text-slate-500 dark:text-slate-400 text-sm">
-          Quizzes, desafios e pequenos momentos para nós dois
-        </p>
-      </motion.div>
+  const backToList = () => {
+    setActiveGame(null);
+    setQuizActive(false);
+    setActiveQuiz(null);
+    setCurrentQuestion(0);
+    setScore(0);
+    setShowResult(false);
+  };
+
+  // ── GAMES LOBBY ────────────────────────────────────────────
+  if (activeGame === null) {
+    return (
+      <div className="min-h-screen w-full p-6 pt-8 pb-10">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
+          <h1 className="font-romantic text-5xl text-primary mb-1">Jogos</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">
+            Escolha um jogo para jogar juntos
+          </p>
+        </motion.div>
+
+        <div className="space-y-4">
+          {/* Quiz */}
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            onClick={() => setActiveGame("quiz")}
+            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-3xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] text-left"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <Star className="w-7 h-7" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold mb-0.5">Quiz do Casal</h3>
+                <p className="text-sm text-white/80">
+                  Crie perguntas e descubra o quanto se conhecem
+                </p>
+                {availableQuizzes.length > 0 && (
+                  <span className="mt-2 inline-block bg-white/20 rounded-full px-3 py-0.5 text-xs font-semibold">
+                    {availableQuizzes.length} quiz disponível ✨
+                  </span>
+                )}
+              </div>
+            </div>
+          </motion.button>
+
+          {/* Adivinhe a Palavra */}
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            onClick={() => setActiveGame("word")}
+            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-3xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] text-left"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <Gamepad2 className="w-7 h-7" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold mb-0.5">Adivinhe a Palavra</h3>
+                <p className="text-sm text-white/80">
+                  Descubra a palavra secreta de 4 letras do seu amor
+                </p>
+                {isWordRoundActive && (
+                  <span className="mt-2 inline-block bg-white/20 rounded-full px-3 py-0.5 text-xs font-semibold">
+                    Partida em andamento 🟢
+                  </span>
+                )}
+              </div>
+            </div>
+          </motion.button>
+
+          {/* Surpresa do Dia */}
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            onClick={showSurprise}
+            className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-3xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] text-left"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
+                <Gift className="w-7 h-7" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold mb-0.5">Surpresa do Dia</h3>
+                <p className="text-sm text-white/80">
+                  Toque para receber uma mensagem especial
+                </p>
+              </div>
+            </div>
+          </motion.button>
+
+          {/* Rodapé romântico */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-950/20 dark:to-purple-950/20 rounded-3xl p-6 text-center border border-transparent dark:border-pink-900/20"
+          >
+            <Sparkles className="w-10 h-10 text-primary mx-auto mb-2" />
+            <p className="text-slate-800/80 dark:text-slate-300 font-romantic text-xl">
+              Obrigado por fazer parte da minha vida 💕
+            </p>
+          </motion.div>
+        </div>
+
+        {/* Surprise modal */}
+        <AnimatePresence>
+          {surprise && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6"
+            >
+              <motion.div
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.5, opacity: 0 }}
+                className="bg-white dark:bg-slate-900 rounded-3xl p-8 max-w-sm shadow-2xl text-center relative transition-colors"
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                >
+                  <Sparkles className="w-16 h-16 text-primary mx-auto mb-4" />
+                </motion.div>
+                <p className="text-slate-900 dark:text-slate-100 font-romantic text-2xl">
+                  {surprise}
+                </p>
+              </motion.div>
+              {hearts.map((heart) => (
+                <motion.div
+                  key={heart.id}
+                  initial={{ y: "100vh", x: `${heart.x}vw`, opacity: 1 }}
+                  animate={{ y: "-20vh", opacity: 0 }}
+                  transition={{ duration: 3, ease: "easeOut" }}
+                  className="absolute"
+                  style={{ left: 0, bottom: 0 }}
+                >
+                  <Heart className="w-8 h-8 text-primary fill-current" />
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
+  // ── QUIZ ───────────────────────────────────────────────────
+  if (activeGame === "quiz") {
+    return (
+      <div className="min-h-screen w-full p-6 pt-8 pb-10">
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={backToList}
+            className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          >
+            <X size={20} />
+          </button>
+          <h2 className="font-bold text-xl text-slate-900 dark:text-slate-100">Quiz do Casal</h2>
+        </div>
 
       {!quizActive && !showResult ? (
         <div className="space-y-4">
@@ -520,198 +675,17 @@ export default function Extras() {
             </motion.div>
           )}
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
-            className="rounded-3xl bg-white p-5 shadow-md dark:bg-slate-900"
-          >
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <Gamepad2 size={22} />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900 dark:text-slate-100">
-                  Adivinhe a Palavra
-                </h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Palavras secretas de 4 letras
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-slate-900 dark:text-slate-100">
-                      Sala da partida
-                    </p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      {isWordRoundActive
-                        ? `Partida ${wordGame?.round ?? 1} em andamento`
-                        : hasWordRoom
-                        ? "Partida encerrada. Inicie uma nova quando quiser"
-                        : "Inicie uma partida para jogar"}
-                    </p>
-                  </div>
-                  {isWordRoundActive ? (
-                    <button
-                      onClick={finishWordRound}
-                      className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 active:scale-95 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
-                    >
-                      Encerrar
-                    </button>
-                  ) : (
-                    <button
-                      onClick={startWordRound}
-                      disabled={isStartingWordRound}
-                      className="rounded-xl bg-pink-500 px-3 py-2 text-sm font-bold text-white shadow-md shadow-pink-500/20 active:scale-95 disabled:cursor-not-allowed disabled:bg-pink-300"
-                    >
-                      {isStartingWordRound ? "Criando..." : "Criar sala"}
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="font-semibold text-slate-900 dark:text-slate-100">
-                    Sua palavra
-                  </p>
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                    {currentUserSecret ? "Cadastrada" : "Pendente"}
-                  </span>
-                </div>
-                {currentUserSecret && (
-                  <p className="mb-3 rounded-xl bg-primary/10 p-3 text-center font-black uppercase tracking-[0.4em] text-primary">
-                    {currentUserSecret}
-                  </p>
-                )}
-                <div className="flex gap-2">
-                  <input
-                    value={secretWord}
-                    onChange={(event) => setSecretWord(normalizeWord(event.target.value))}
-                    placeholder="AMOR"
-                    maxLength={4}
-                    className="min-w-0 flex-1 rounded-xl border border-slate-200 p-3 text-center uppercase tracking-[0.4em] outline-none focus:ring-2 focus:ring-primary/50 dark:border-slate-800 dark:bg-slate-800 dark:text-white"
-                  />
-                  <button
-                    onClick={saveSecretWord}
-                    disabled={isSavingSecretWord}
-                    className="rounded-xl bg-pink-500 px-4 py-3 font-bold text-white shadow-md shadow-pink-500/20 active:scale-95 disabled:cursor-not-allowed disabled:bg-pink-300"
-                  >
-                    {isSavingSecretWord ? "Salvando..." : "Salvar"}
-                  </button>
-                </div>
-                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                  Digite 4 letras. Se nao houver sala, ela sera criada automaticamente.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="font-semibold text-slate-900 dark:text-slate-100">
-                    Palavra de {partnerName}
-                  </p>
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                    {partnerSecret ? "Pronta" : "Aguardando"}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    value={guessWord}
-                    onChange={(event) => setGuessWord(normalizeWord(event.target.value))}
-                    placeholder="LUAU"
-                    maxLength={4}
-                    disabled={!isWordRoundActive || !partnerSecret}
-                    className="min-w-0 flex-1 rounded-xl border border-slate-200 p-3 text-center uppercase tracking-[0.4em] outline-none focus:ring-2 focus:ring-primary/50 dark:border-slate-800 dark:bg-slate-800 dark:text-white"
-                  />
-                  <button
-                    onClick={submitWordGuess}
-                    disabled={!isWordRoundActive || !partnerSecret}
-                    className="rounded-xl bg-slate-900 px-4 py-3 font-bold text-white shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-700"
-                  >
-                    Tentar
-                  </button>
-                </div>
-              </div>
-
-              {wordGameError && (
-                <p className="rounded-xl bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-300">
-                  {wordGameError}
-                </p>
-              )}
-
-              {wordGuesses.length > 0 && (
-                <div className="space-y-3">
-                  {wordGuesses.slice().reverse().map((guess) => (
-                    <div
-                      key={guess.id}
-                      className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/70"
-                    >
-                      <div className="mb-2 flex items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
-                        <span>{guess.player} tentou adivinhar {guess.target}</span>
-                        <span>{guess.guess === wordGame?.words?.[guess.target] ? "Acertou" : "Tentativa"}</span>
-                      </div>
-                      <div className="grid grid-cols-4 gap-2">
-                        {guess.result.map((item, index) => (
-                          <div
-                            key={`${guess.id}-${index}`}
-                            className={`flex aspect-square flex-col items-center justify-center rounded-xl text-base font-black text-white ${
-                              item.status === "correct"
-                                ? "bg-emerald-500"
-                                : item.status === "present"
-                                ? "bg-amber-500"
-                                : "bg-slate-400 dark:bg-slate-700"
-                            }`}
-                          >
-                            <span>{item.letter}</span>
-                            {item.status === "present" && item.correctPosition !== undefined && (
-                              <span className="text-[10px] font-bold leading-none">
-                                pos {item.correctPosition + 1}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </motion.div>
-
-          <motion.button
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            onClick={showSurprise}
-            className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 relative overflow-hidden"
-          >
-            <Gift className="w-12 h-12 mx-auto mb-3" />
-            <h3 className="mb-2">Surpresa do Dia</h3>
-            <p className="text-sm text-white/90">
-              Clique para uma mensagem especial!
-            </p>
-          </motion.button>
-
           {history.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.35 }}
+              transition={{ delay: 0.3 }}
               className="rounded-3xl bg-white p-5 shadow-md dark:bg-slate-900"
             >
-              <h3 className="mb-4 font-bold text-slate-900 dark:text-slate-100">
-                Histórico de quizzes
-              </h3>
+              <h3 className="mb-4 font-bold text-slate-900 dark:text-slate-100">Histórico</h3>
               <div className="space-y-3">
                 {history.map((item) => (
-                  <div
-                    key={item.id}
-                    className="rounded-2xl border border-slate-200 p-4 text-sm dark:border-slate-800"
-                  >
+                  <div key={item.id} className="rounded-2xl border border-slate-200 p-4 text-sm dark:border-slate-800">
                     <div className="flex items-center justify-between gap-3">
                       <span className="font-semibold text-slate-900 dark:text-slate-100">
                         {item.respondent} respondeu
@@ -728,66 +702,6 @@ export default function Extras() {
               </div>
             </motion.div>
           )}
-
-          {wordGameHistory.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.38 }}
-              className="rounded-3xl bg-white p-5 shadow-md dark:bg-slate-900"
-            >
-              <h3 className="mb-4 font-bold text-slate-900 dark:text-slate-100">
-                Histórico de partidas (Adivinhe a Palavra)
-              </h3>
-              <div className="space-y-3">
-                {wordGameHistory.map((item) => {
-                  const totalGuesses = item.guesses.length;
-                  const correctGuesses = item.guesses.filter(
-                    (guess) => guess.guess === item.words[guess.target]
-                  ).length;
-                  return (
-                    <div
-                      key={item.id}
-                      className="rounded-2xl border border-slate-200 p-4 text-sm dark:border-slate-800"
-                    >
-                      <div className="flex items-center justify-between gap-3 mb-2">
-                        <span className="font-semibold text-slate-900 dark:text-slate-100">
-                          Partida {item.round}
-                        </span>
-                        <span className="rounded-full bg-emerald-100 px-3 py-1 font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-                          {correctGuesses}/{totalGuesses}
-                        </span>
-                      </div>
-                      <p className="text-slate-500 dark:text-slate-400">
-                        Jogadores: {item.players.join(" vs ")}
-                      </p>
-                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                        {new Date(item.finishedAt).toLocaleDateString("pt-BR", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-950/20 dark:to-purple-950/20 rounded-3xl p-8 text-center border border-transparent dark:border-pink-900/20"
-          >
-            <Sparkles className="w-12 h-12 text-primary mx-auto mb-3" />
-            <p className="text-slate-800/80 dark:text-slate-300 font-romantic text-xl">
-              Obrigado por fazer parte da minha vida 💕
-            </p>
-          </motion.div>
         </div>
       ) : quizActive && !showResult ? (
         <motion.div
@@ -911,48 +825,173 @@ export default function Extras() {
         )}
       </AnimatePresence>
 
-      {/* Surprise modal */}
-      <AnimatePresence>
-        {surprise && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-6"
-          >
-            <motion.div
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.5, opacity: 0 }}
-              className="bg-white dark:bg-slate-900 rounded-3xl p-8 max-w-sm shadow-2xl text-center relative transition-colors"
-            >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              >
-                <Sparkles className="w-16 h-16 text-primary mx-auto mb-4" />
-              </motion.div>
-              <p className="text-slate-900 dark:text-slate-100 font-romantic text-2xl">
-                {surprise}
-              </p>
-            </motion.div>
+    </div>
+  );
+  }
 
-            {/* Floating hearts */}
-            {hearts.map((heart) => (
-              <motion.div
-                key={heart.id}
-                initial={{ y: "100vh", x: `${heart.x}vw`, opacity: 1 }}
-                animate={{ y: "-20vh", opacity: 0 }}
-                transition={{ duration: 3, ease: "easeOut" }}
-                className="absolute"
-                style={{ left: 0, bottom: 0 }}
+  // ── JOGO DE PALAVRAS ───────────────────────────────────────
+  return (
+    <div className="min-h-screen w-full p-6 pt-8 pb-10">
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          onClick={backToList}
+          className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+        >
+          <X size={20} />
+        </button>
+        <h2 className="font-bold text-xl text-slate-900 dark:text-slate-100">Adivinhe a Palavra</h2>
+      </div>
+
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="font-semibold text-slate-900 dark:text-slate-100">Sala da partida</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                {isWordRoundActive
+                  ? `Partida ${wordGame?.round ?? 1} em andamento`
+                  : hasWordRoom
+                  ? "Partida encerrada. Inicie uma nova quando quiser"
+                  : "Inicie uma partida para jogar"}
+              </p>
+            </div>
+            {isWordRoundActive ? (
+              <button
+                onClick={finishWordRound}
+                className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 active:scale-95 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
               >
-                <Heart className="w-8 h-8 text-primary fill-current" />
-              </motion.div>
-            ))}
-          </motion.div>
+                Encerrar
+              </button>
+            ) : (
+              <button
+                onClick={startWordRound}
+                disabled={isStartingWordRound}
+                className="rounded-xl bg-pink-500 px-3 py-2 text-sm font-bold text-white shadow-md shadow-pink-500/20 active:scale-95 disabled:cursor-not-allowed disabled:bg-pink-300"
+              >
+                {isStartingWordRound ? "Criando..." : "Criar sala"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="font-semibold text-slate-900 dark:text-slate-100">Sua palavra</p>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              {currentUserSecret ? "Cadastrada" : "Pendente"}
+            </span>
+          </div>
+          {currentUserSecret && (
+            <p className="mb-3 rounded-xl bg-primary/10 p-3 text-center font-black uppercase tracking-[0.4em] text-primary">
+              {currentUserSecret}
+            </p>
+          )}
+          <div className="flex gap-2">
+            <input
+              value={secretWord}
+              onChange={(e) => setSecretWord(normalizeWord(e.target.value))}
+              placeholder="AMOR"
+              maxLength={4}
+              className="min-w-0 flex-1 rounded-xl border border-slate-200 p-3 text-center uppercase tracking-[0.4em] outline-none focus:ring-2 focus:ring-primary/50 dark:border-slate-800 dark:bg-slate-800 dark:text-white"
+            />
+            <button
+              onClick={saveSecretWord}
+              disabled={isSavingSecretWord}
+              className="rounded-xl bg-pink-500 px-4 py-3 font-bold text-white shadow-md shadow-pink-500/20 active:scale-95 disabled:cursor-not-allowed disabled:bg-pink-300"
+            >
+              {isSavingSecretWord ? "Salvando..." : "Salvar"}
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            Digite 4 letras. Se não houver sala, ela será criada automaticamente.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="font-semibold text-slate-900 dark:text-slate-100">Palavra de {partnerName}</p>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              {partnerSecret ? "Pronta" : "Aguardando"}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <input
+              value={guessWord}
+              onChange={(e) => setGuessWord(normalizeWord(e.target.value))}
+              placeholder="LUAU"
+              maxLength={4}
+              disabled={!isWordRoundActive || !partnerSecret}
+              className="min-w-0 flex-1 rounded-xl border border-slate-200 p-3 text-center uppercase tracking-[0.4em] outline-none focus:ring-2 focus:ring-primary/50 dark:border-slate-800 dark:bg-slate-800 dark:text-white"
+            />
+            <button
+              onClick={submitWordGuess}
+              disabled={!isWordRoundActive || !partnerSecret}
+              className="rounded-xl bg-slate-900 px-4 py-3 font-bold text-white shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-700"
+            >
+              Tentar
+            </button>
+          </div>
+        </div>
+
+        {wordGameError && (
+          <p className="rounded-xl bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-300">
+            {wordGameError}
+          </p>
         )}
-      </AnimatePresence>
+
+        {wordGuesses.length > 0 && (
+          <div className="space-y-3">
+            {wordGuesses.slice().reverse().map((guess) => (
+              <div key={guess.id} className="rounded-2xl bg-white p-3 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                <div className="mb-2 flex items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+                  <span>{guess.player} tentou adivinhar {guess.target}</span>
+                  <span>{guess.guess === wordGame?.words?.[guess.target] ? "✅ Acertou" : "Tentativa"}</span>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {guess.result.map((item, index) => (
+                    <div
+                      key={`${guess.id}-${index}`}
+                      className={`flex aspect-square flex-col items-center justify-center rounded-xl text-base font-black text-white ${
+                        item.status === "correct" ? "bg-emerald-500" : item.status === "present" ? "bg-amber-500" : "bg-slate-400 dark:bg-slate-700"
+                      }`}
+                    >
+                      <span>{item.letter}</span>
+                      {item.status === "present" && item.correctPosition !== undefined && (
+                        <span className="text-[10px] font-bold leading-none">pos {item.correctPosition + 1}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {wordGameHistory.length > 0 && (
+          <div className="rounded-3xl bg-white p-5 shadow-md dark:bg-slate-900">
+            <h3 className="mb-4 font-bold text-slate-900 dark:text-slate-100">Histórico de partidas</h3>
+            <div className="space-y-3">
+              {wordGameHistory.map((item) => {
+                const totalGuesses = item.guesses.length;
+                const correctGuesses = item.guesses.filter((g) => g.guess === item.words[g.target]).length;
+                return (
+                  <div key={item.id} className="rounded-2xl border border-slate-200 p-4 text-sm dark:border-slate-800">
+                    <div className="flex items-center justify-between gap-3 mb-1">
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">Partida {item.round}</span>
+                      <span className="rounded-full bg-emerald-100 px-3 py-1 font-bold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                        {correctGuesses}/{totalGuesses}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                      {new Date(item.finishedAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
