@@ -123,3 +123,4 @@ Desenvolvido por **Natanael Cristofe**
 <p align="center">
   Feito com ❤️ usando React + PWA
 </p>
+https://23-08-2026-8zp9hmt25-natanael-cristofes-projects.vercel.app/
