@@ -138,7 +138,7 @@ export default function Layout() {
   const navItems = [
     { path: "/app", icon: Heart, label: "Amor" },
     { path: "/app/messages", icon: MessageCircle, label: "Chat" },
-    { path: "/app/timeline", icon: Clock, label: "Marcos" },
+    { path: "/app/timeline", icon: Clock, label: "Momentos" },
     { path: "/app/extras", icon: Gamepad2, label: "Jogos" },
   ];
 
