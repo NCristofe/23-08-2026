@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, Clock, Gamepad2, LogOut, Moon, Sun } from "lucide-react";
+import { Heart, MessageCircle, Clock, Gamepad2, LogOut, Moon, Sun, Menu, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { clearAuthentication, isAuthenticated } from "../auth";
 import { db, hasFirebaseConfig, missingFirebaseConfig } from "../../Firebase";
-import { 
-  collection, onSnapshot, query, orderBy, limit, doc, 
-  setDoc, serverTimestamp, QuerySnapshot, DocumentData, DocumentChange 
+import {
+  collection, onSnapshot, query, orderBy, limit, doc,
+  setDoc, serverTimestamp, QuerySnapshot, DocumentData, DocumentChange
 } from "firebase/firestore";
 import toast from "react-hot-toast";
 
@@ -13,6 +14,7 @@ export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (theme === "dark") {
@@ -155,74 +157,130 @@ export default function Layout() {
         </div>
       </div>
 
-      {/* Theme Toggle Button */}
+      {/* Hamburger Button */}
       <button
-        onClick={toggleTheme}
-        className="absolute top-4 right-4 z-50 p-2 rounded-full bg-white/20 backdrop-blur-md shadow-sm border border-white/30 dark:border-slate-800"
+        onClick={() => setMenuOpen(true)}
+        className="absolute top-4 right-4 z-50 p-2 rounded-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-md shadow-sm border border-slate-200 dark:border-slate-700"
+        aria-label="Abrir menu"
       >
-        {theme === "light" ? <Moon size={20} className="text-slate-700" /> : <Sun size={20} className="text-yellow-400" />}
+        <Menu size={22} className="text-slate-700 dark:text-slate-200" />
       </button>
 
+      {/* Overlay */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 z-50 bg-black/40 backdrop-blur-sm"
+            onClick={() => setMenuOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Side Menu */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="absolute top-0 right-0 h-full w-72 z-50 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+          >
+            {/* Menu Header */}
+            <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <Heart className="w-5 h-5 text-primary fill-current" />
+                <span className="font-semibold text-slate-800 dark:text-slate-100">Nosso Amor</span>
+              </div>
+              <button
+                onClick={() => setMenuOpen(false)}
+                className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                aria-label="Fechar menu"
+              >
+                <X size={20} className="text-slate-500 dark:text-slate-400" />
+              </button>
+            </div>
+
+            {/* Navigation */}
+            <div className="flex-1 p-4 space-y-1">
+              <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-3">Navegação</p>
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => { navigate(item.path); setMenuOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-200 ${
+                      isActive
+                        ? "bg-primary/10 text-primary font-semibold"
+                        : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    <Icon className={`w-5 h-5 ${isActive ? "fill-current" : ""}`} />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Config & Logout */}
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-1">
+              <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-3 mb-3">Configurações</p>
+
+              {/* Theme Toggle */}
+              <div className="flex items-center justify-between px-3 py-3 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300">
+                  {theme === "light" ? <Moon size={20} /> : <Sun size={20} className="text-yellow-400" />}
+                  <span>{theme === "light" ? "Modo escuro" : "Modo claro"}</span>
+                </div>
+                <button
+                  onClick={toggleTheme}
+                  className={`relative w-11 h-6 rounded-full transition-colors duration-300 ${
+                    theme === "dark" ? "bg-primary" : "bg-slate-300"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300 ${
+                      theme === "dark" ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Logout */}
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Sair</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Content */}
-      <div className="flex-1 overflow-y-auto pb-20">
+      <div className="flex-1 overflow-y-auto">
         <Outlet />
       </div>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800">
-        <div className="flex items-center justify-around px-4 py-3">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-
-            return (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className={`flex flex-col items-center gap-1 transition-all duration-300 ${
-                  isActive ? "text-primary scale-110" : "text-slate-500 dark:text-slate-400"
-                }`}
-              >
-                <Icon className={`w-6 h-6 ${isActive ? "fill-current" : ""}`} />
-                <span className="text-xs">{item.label}</span>
-              </button>
-            );
-          })}
-          <button
-            type="button"
-            onClick={handleLogout}
-            aria-label="Sair"
-            className="flex flex-col items-center gap-1 text-slate-500 dark:text-slate-400 transition-all duration-300 hover:text-primary"
-          >
-            <LogOut className="w-6 h-6" />
-            <span className="text-xs">Sair</span>
-          </button>
-        </div>
-      </nav>
-
       <style>{`
         @keyframes float {
-          0%, 100% {
-            transform: translateY(0) rotate(0deg);
-          }
-          50% {
-            transform: translateY(-20px) rotate(10deg);
-          }
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(10deg); }
         }
-
         @keyframes float-delayed {
-          0%, 100% {
-            transform: translateY(0) rotate(0deg);
-          }
-          50% {
-            transform: translateY(-15px) rotate(-10deg);
-          }
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-15px) rotate(-10deg); }
         }
-
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-
+        .animate-float { animation: float 6s ease-in-out infinite; }
         .animate-float-delayed {
           animation: float-delayed 7s ease-in-out infinite;
           animation-delay: 1s;
