@@ -1,0 +1,40 @@
+name: Deploy Multi-Branch
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build
+        run: |
+          if [ "${{ github.ref_name }}" = "develop" ]; then
+            export VITE_BASE_PATH="/${{ github.event.repository.name }}/develop/"
+            npm run build
+          else
+            npm run build
+          fi
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
+          target-folder: ${{ github.ref_name == 'develop' && 'develop' || '.' }}
+          branch: gh-pages # Branch onde os arquivos compilados ficam
+          clean: ${{ github.ref_name == 'main' }} # Limpa apenas se for a main para não deletar a pasta /develop
