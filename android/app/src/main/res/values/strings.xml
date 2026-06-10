@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Nosso Amor</string>
+    <string name="title_activity_main">Nosso Amor</string>
+    <string name="package_name">com.nossoamor.app</string>
+    <string name="custom_url_scheme">com.nossoamor.app</string>
+</resources>
